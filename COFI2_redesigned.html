@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cofidis — Expert Tour de France</title>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --red: #ED1C24;
+            --red-dark: #B01419;
+            --red-deep: #7a0d11;
+            --gold: #FFD700;
+            --gold-dark: #C9A800;
+            --black: #111111;
+            --dark: #1a1a1a;
+            --panel: #1e1e1e;
+            --surface: #252525;
+            --surface2: #2e2e2e;
+            --white: #ffffff;
+            --grey: #aaaaaa;
+            --light: #f0f0f0;
+            --chat-bg: #f7f6f4;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Barlow', sans-serif;
+            background: var(--black);
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ── TOP BAR ────────────────────────────── */
+        .topbar {
+            background: var(--dark);
+            border-bottom: 3px solid var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+            height: 64px;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .topbar::after {
+            content: '';
+            position: absolute;
+            bottom: -6px;
+            left: 0; right: 0;
+            height: 3px;
+            background: var(--red);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .brand-logo {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-weight: 900;
+            font-size: 2rem;
+            letter-spacing: 3px;
+            line-height: 1;
+            user-select: none;
+        }
+        .brand-logo .c1 { color: var(--gold); }
+        .brand-logo .c2 { color: var(--white); }
+
+        .brand-sep {
+            width: 2px;
+            height: 28px;
+            background: var(--surface2);
+        }
+
+        .brand-tag {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            color: var(--gold);
+            line-height: 1.3;
+        }
+        .brand-tag span {
+            display: block;
+            color: var(--grey);
+            font-weight: 400;
+            letter-spacing: 1.5px;
+            font-size: 0.7rem;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            background: rgba(237,28,36,0.12);
+            border: 1px solid rgba(237,28,36,0.3);
+            border-radius: 20px;
+            padding: 5px 14px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--red);
+            letter-spacing: 1px;
+        }
+        .status-dot {
+            width: 7px; height: 7px;
+            background: #22c55e;
+            border-radius: 50%;
+            box-shadow: 0 0 6px #22c55e;
+            animation: pulse-green 2s infinite;
+        }
+        @keyframes pulse-green {
+            0%,100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        .km-counter {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--grey);
+            letter-spacing: 1px;
+        }
+        .km-counter span { color: var(--gold); }
+
+        /* ── MAIN LAYOUT ─────────────────────────── */
+        .main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* ── SIDEBAR ─────────────────────────────── */
+        .sidebar {
+            width: 280px;
+            flex-shrink: 0;
+            background: var(--panel);
+            border-right: 1px solid #2a2a2a;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-section {
+            padding: 20px 20px 0;
+        }
+
+        .sidebar-label {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--grey);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sidebar-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--surface2);
+        }
+
+        .sprint-chips {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding-bottom: 20px;
+        }
+
+        .chip {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--surface);
+            border: 1px solid transparent;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--light);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: left;
+        }
+        .chip .chip-icon {
+            font-size: 1rem;
+            flex-shrink: 0;
+            width: 22px;
+            text-align: center;
+        }
+        .chip:hover {
+            background: var(--surface2);
+            border-color: var(--gold);
+            color: var(--gold);
+            transform: translateX(3px);
+        }
+        .chip:active {
+            transform: translateX(1px) scale(0.98);
+        }
+
+        .sidebar-divider {
+            height: 1px;
+            background: #2a2a2a;
+            margin: 0 20px;
+        }
+
+        .sidebar-stats {
+            padding: 16px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .stat-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--grey);
+            font-weight: 500;
+        }
+        .stat-value {
+            font-family: 'Barlow Condensed', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--gold);
+        }
+
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 16px 20px;
+            border-top: 1px solid #2a2a2a;
+        }
+
+        .clear-btn {
+            width: 100%;
+            background: transparent;
+            border: 1px solid var(--surface2);
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--grey);
+            cursor: pointer;
+            letter-spacing: 1px;
+            font-family: 'Barlow Condensed', sans-serif;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+        .clear-btn:hover {
+            border-color: var(--red);
+            color: var(--red);
+            background: rgba(237,28,36,0.07);
+        }
+
+        /* ── CHAT AREA ───────────────────────────── */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--chat-bg);
+            position: relative;
+        }
+
+        /* Diagonal texture overlay */
+        .chat-area::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: repeating-linear-gradient(
+                -55deg,
+                rgba(237,28,36,0.015) 0px, rgba(237,28,36,0.015) 1px,
+                transparent 1px, transparent 40px
+            );
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 28px 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .chat-messages::-webkit-scrollbar { width: 5px; }
+        .chat-messages::-webkit-scrollbar-track { background: transparent; }
+        .chat-messages::-webkit-scrollbar-thumb {
+            background: rgba(237,28,36,0.4);
+            border-radius: 10px;
+        }
+        .chat-messages::-webkit-scrollbar-thumb:hover {
+            background: var(--red);
+        }
+
+        /* ── MESSAGES ────────────────────────────── */
+        .message {
+            display: flex;
+            flex-direction: column;
+            animation: msg-in 0.3s ease forwards;
+            opacity: 0;
+        }
+        @keyframes msg-in {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user-message { align-items: flex-end; margin-bottom: 4px; }
+        .message.bot-message  { align-items: flex-start; margin-bottom: 12px; }
+
+        .msg-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 10px;
+            max-width: 72%;
+        }
+
+        .bot-message .msg-row { flex-direction: row; }
+        .user-message .msg-row { flex-direction: row-reverse; }
+
+        .avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+        .bot-avatar {
+            background: var(--red);
+            border: 2px solid var(--gold);
+            color: var(--white);
+        }
+        .user-avatar {
+            background: var(--surface2);
+            border: 2px solid var(--surface);
+            color: var(--grey);
+        }
+
+        .message-content {
+            padding: 13px 18px;
+            font-size: 0.93rem;
+            line-height: 1.6;
+            word-wrap: break-word;
+        }
+
+        .user-message .message-content {
+            background: var(--red);
+            color: var(--white);
+            border-radius: 18px 18px 4px 18px;
+            box-shadow: 0 4px 16px rgba(237,28,36,0.25);
+        }
+
+        .bot-message .message-content {
+            background: var(--white);
+            color: #1a1a1a;
+            border-radius: 18px 18px 18px 4px;
+            border-left: 4px solid var(--gold);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+
+        .bot-message:first-child .message-content {
+            background: #fffbeb;
+            border-left: 4px solid var(--gold);
+        }
+
+        .timestamp {
+            font-size: 0.68rem;
+            color: #999;
+            margin-top: 5px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+        .user-message .timestamp { text-align: right; margin-right: 4px; }
+        .bot-message .timestamp  { margin-left: 44px; }
+
+        /* ── TYPING INDICATOR ────────────────────── */
+        .typing-indicator {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 14px 18px;
+            background: var(--white);
+            border-radius: 18px 18px 18px 4px;
+            border-left: 4px solid var(--gold);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            width: fit-content;
+        }
+        .typing-indicator span {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            animation: bounce 1.3s infinite ease-in-out;
+        }
+        .typing-indicator span:nth-child(1) { background: var(--red); animation-delay: 0s; }
+        .typing-indicator span:nth-child(2) { background: var(--gold); animation-delay: 0.18s; }
+        .typing-indicator span:nth-child(3) { background: var(--red); animation-delay: 0.36s; }
+        @keyframes bounce {
+            0%,60%,100% { transform: translateY(0); opacity: 0.5; }
+            30%          { transform: translateY(-7px); opacity: 1; }
+        }
+
+        /* ── INPUT BAR ───────────────────────────── */
+        .input-bar {
+            flex-shrink: 0;
+            padding: 16px 32px 20px;
+            background: var(--white);
+            border-top: 3px solid var(--gold);
+            position: relative;
+            z-index: 2;
+        }
+
+        .input-bar::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: 0; right: 0;
+            height: 3px;
+            background: var(--red);
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #f4f4f4;
+            border: 2px solid #e0e0e0;
+            border-radius: 40px;
+            padding: 6px 8px 6px 20px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .input-row:focus-within {
+            border-color: var(--gold);
+            box-shadow: 0 0 0 4px rgba(255,215,0,0.15);
+            background: var(--white);
+        }
+
+        #userInput {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-family: 'Barlow', sans-serif;
+            font-size: 0.95rem;
+            color: #1a1a1a;
+            outline: none;
+        }
+        #userInput::placeholder { color: #aaa; }
+        #userInput:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        #sendButton {
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            border: none;
+            background: var(--red);
+            color: var(--white);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s;
+            box-shadow: 0 3px 10px rgba(237,28,36,0.35);
+        }
+        #sendButton:hover:not(:disabled) {
+            background: var(--red-dark);
+            transform: scale(1.08);
+            box-shadow: 0 5px 16px rgba(237,28,36,0.5);
+        }
+        #sendButton:active:not(:disabled) { transform: scale(0.96); }
+        #sendButton:disabled {
+            background: #ccc;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        #sendButton svg { width: 18px; height: 18px; }
+
+        .input-hint {
+            font-size: 0.72rem;
+            color: #aaa;
+            text-align: center;
+            margin-top: 8px;
+            font-weight: 500;
+        }
+        .input-hint kbd {
+            background: #e8e8e8;
+            border-radius: 4px;
+            padding: 1px 5px;
+            font-family: inherit;
+            font-size: 0.68rem;
+            color: #666;
+            border: 1px solid #ccc;
+        }
+
+        /* ── DATE DIVIDER ────────────────────────── */
+        .date-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 8px 0 16px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #bbb;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .date-divider::before, .date-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #ddd;
+        }
+
+        /* ── RESPONSIVE ──────────────────────────── */
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .topbar { padding: 0 16px; }
+            .chat-messages { padding: 16px; }
+            .input-bar { padding: 12px 16px 16px; }
+            .msg-row { max-width: 90%; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOP BAR -->
+    <div class="topbar">
+        <div class="brand">
+            <div class="brand-logo"><span class="c1">COF</span><span class="c2">IDIS</span></div>
+            <div class="brand-sep"></div>
+            <div class="brand-tag">
+                ★ Sponsor Officiel
+                <span>Tour de France</span>
+            </div>
+        </div>
+        <div class="topbar-right">
+            <div class="km-counter">Étape <span id="topKm">0</span> km</div>
+            <div class="status-pill">
+                <span class="status-dot"></span>
+                Expert en ligne
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-label">Questions Sprint</div>
+                <div class="sprint-chips" id="sidebarChips">
+                    <button class="chip" onclick="useSuggestion('Qu\'est-ce qu\'un PSM?')"><span class="chip-icon">🚵</span> PSM</button>
+                    <button class="chip" onclick="useSuggestion('Comment trouver l\'échéance du mois?')"><span class="chip-icon">📅</span> Échéance du mois</button>
+                    <button class="chip" onclick="useSuggestion('Date du décompte?')"><span class="chip-icon">📆</span> Décompte</button>
+                    <button class="chip" onclick="useSuggestion('Rebond assurance?')"><span class="chip-icon">🛡️</span> Rebond assurance</button>
+                    <button class="chip" onclick="useSuggestion('Modifier date de prélèvement?')"><span class="chip-icon">💳</span> Date prélèvement</button>
+                    <button class="chip" onclick="useSuggestion('Comment gérer un client sous tutelle?')"><span class="chip-icon">👤</span> Tutelle</button>
+                    <button class="chip" onclick="useSuggestion('Qu\'est-ce que la FIPEN?')"><span class="chip-icon">📄</span> FIPEN</button>
+                    <button class="chip" onclick="useSuggestion('C\'est quoi le taux usuraire?')"><span class="chip-icon">📊</span> Taux usuraire</button>
+                    <button class="chip" onclick="useSuggestion('Que signifie OCI?')"><span class="chip-icon">📁</span> OCI</button>
+                    <button class="chip" onclick="useSuggestion('Comment justifier un CPP?')"><span class="chip-icon">⚡</span> CPP</button>
+                </div>
+            </div>
+
+            <div class="sidebar-divider"></div>
+
+            <div class="sidebar-stats">
+                <div class="sidebar-label" style="margin-bottom:8px;">Session</div>
+                <div class="stat-row">
+                    <span class="stat-label">Questions posées</span>
+                    <span class="stat-value" id="statQuestions">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Réponses trouvées</span>
+                    <span class="stat-value" id="statAnswers">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Taux de réussite</span>
+                    <span class="stat-value" id="statRate">—</span>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <button class="clear-btn" onclick="clearChat()">🔄 Nouvelle conversation</button>
+            </div>
+        </aside>
+
+        <!-- CHAT -->
+        <div class="chat-area">
+            <div class="chat-messages" id="chatMessages">
+                <div class="date-divider" id="dateDivider">Aujourd'hui</div>
+                <div class="message bot-message">
+                    <div class="msg-row">
+                        <div class="avatar bot-avatar">🚴</div>
+                        <div class="message-content">
+                            Bonjour et bienvenue chez <strong>Cofidis</strong>, partenaire officiel du Tour de France !<br><br>
+                            Je suis spécialisé dans <strong>10 questions</strong> essentielles. Posez-moi vos questions sur les PSM, décomptes, échéances, assurances, et bien plus. Utilisez le panneau latéral pour accéder rapidement aux thèmes.
+                        </div>
+                    </div>
+                    <div class="timestamp">Départ — 0 km</div>
+                </div>
+            </div>
+
+            <div class="input-bar">
+                <div class="input-row">
+                    <input type="text" id="userInput" placeholder="Posez votre question sur le crédit Cofidis…" onkeydown="handleKeyPress(event)">
+                    <button id="sendButton" onclick="sendMessage()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13"/>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="input-hint">Appuyez sur <kbd>Entrée</kbd> pour envoyer</div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const knowledgeBase = [
+            {
+                id: 1,
+                keywords: ['psm', 'prêt sur mesure', 'pret sur mesure', 'crédit amortissable', '500', '35000', '6 mois', '84 mois'],
+                response: "🚵 Le Prêt sur Mesure (PSM) est un crédit amortissable. Il peut être ouvert pour un montant de 500€ jusqu'à 35 000€. Selon le montant emprunté, la durée varie de 6 à 84 mois."
+            },
+            {
+                id: 2,
+                keywords: ['décompte', 'date décompte', 'positionner décompte', 'envoyer décompte', 'décompte 7', 'consultation décompte'],
+                response: "📆 Le décompte est à consulter à la date de la prochaine échéance. Exemple : nous sommes le 7/02, l'échéance du contrat est au 5, vous consultez le décompte en date du 5/03."
+            },
+            {
+                id: 3,
+                keywords: ['échéance du mois', 'trouver échéance', 'voir échéance', 'gec échéance', 'événements échéance'],
+                response: "📅 L'échéance du mois d'un contrat est visible dans GEC, Onglet [Evénements] vue 'Opérations' sur la ligne 'Echéance'. Cette ligne est tracée en date de quantième du contrat."
+            },
+            {
+                id: 4,
+                keywords: ['rebond assurance', 'assurance non souscrite', 'incomplet assurance', 'accessio', 'prêt rénovation', 'conseiller assurance'],
+                response: "🛡️ Dans le cadre d'une étude crédit sur Accessio, PSM, PSM sur PSM, prêt rénovation, si le tiers n'a pas souscrit à l'assurance et que le dossier est complet, le conseiller positionne manuellement un incomplet assurance pour demander au client de nous recontacter afin de lui conseiller l'assurance sur son crédit."
+            },
+            {
+                id: 5,
+                keywords: ['modifier date prélèvement', 'date prélèvement 4cb', '4cb', '3cb', 'pnf', 'modifier échéance monétique', 'date échéance modifiable'],
+                response: "💳 Les dates d'échéances ne sont pas modifiables sur les produits monétiques (3CB, 4CB ou PNF 3/4)."
+            },
+            {
+                id: 6,
+                keywords: ['client sous tutelle', 'tutelle', 'curatelle', 'affaires spécifiques', 'gestion tutelle', 'secteur affaires spécifiques'],
+                response: "👥 Un client sous tutelle est géré par le Secteur des Affaires Spécifiques."
+            },
+            {
+                id: 7,
+                keywords: ['fipen', 'fiche précontractuelle', 'information européenne', 'loi lagarde', 'offre crédit consommation'],
+                response: "📋 La FIPEN est la fiche précontractuelle d'information européenne normalisée, rendue obligatoire par la loi Lagarde dans le cadre de la signature d'une offre de crédit à la consommation."
+            },
+            {
+                id: 8,
+                keywords: ['taux usuraire', 'usure', "taux d'usure", 'trimestre usure', 'janvier avril juillet octobre'],
+                response: "📊 Le taux d'usure est revu tous les trimestres : janvier / avril / juillet / octobre. Celui-ci diffère selon les produits."
+            },
+            {
+                id: 9,
+                keywords: ['oci', 'dossier oci', 'incomplet oci', 'se+ oci', 'signification oci', 'géré en incomplet'],
+                response: "📁 Un dossier en OCI peut avoir 2 significations : soit le dossier est géré en incomplet par le service acceptation, soit pour le process SE+ c'est un état qui est poussé avec un sous motif afin que le conseiller puisse le traiter en fonction des attendus liés au sous motif."
+            },
+            {
+                id: 10,
+                keywords: ['cpp', 'justifier cpp', 'répondre client cpp', 'nouvelle proposition', 'mise à jour données'],
+                response: "⚡ Il faut expliquer au client que suite à la mise à jour de l'ensemble des données de son dossier nous sommes amenés à faire cette nouvelle proposition adaptée."
+            }
+        ];
+
+        let isTyping = false;
+        let totalKm = 0;
+        let questionsAsked = 0;
+        let answersFound = 0;
+
+        function handleKeyPress(e) {
+            if (e.key === 'Enter' && !isTyping) sendMessage();
+        }
+
+        function useSuggestion(q) {
+            document.getElementById('userInput').value = q;
+            document.getElementById('userInput').focus();
+            sendMessage();
+        }
+
+        function findBestMatch(q) {
+            const ql = q.toLowerCase();
+            const words = ql.split(' ');
+            let best = null, top = 0;
+            for (const item of knowledgeBase) {
+                let score = 0;
+                for (const kw of item.keywords) {
+                    const kwl = kw.toLowerCase();
+                    if (ql.includes(kwl)) score += 3;
+                    for (const w of words) {
+                        if (w.length > 2 && (kwl.includes(w) || w.includes(kwl))) score += 1;
+                    }
+                }
+                if (score > top) { top = score; best = item; }
+            }
+            return best;
+        }
+
+        function getTime() {
+            return new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function addMessage(text, isUser = false) {
+            const container = document.getElementById('chatMessages');
+
+            const wrapper = document.createElement('div');
+            wrapper.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+
+            const row = document.createElement('div');
+            row.className = 'msg-row';
+
+            const avatar = document.createElement('div');
+            avatar.className = `avatar ${isUser ? 'user-avatar' : 'bot-avatar'}`;
+            avatar.textContent = isUser ? '👤' : '🚴';
+
+            const bubble = document.createElement('div');
+            bubble.className = 'message-content';
+            bubble.textContent = text;
+
+            row.appendChild(avatar);
+            row.appendChild(bubble);
+
+            const ts = document.createElement('div');
+            ts.className = 'timestamp';
+            if (isUser) {
+                ts.textContent = `${getTime()} — ⚡ Sprint`;
+            } else {
+                const km = Math.floor(Math.random() * 120) + 10;
+                totalKm += km;
+                document.getElementById('topKm').textContent = totalKm;
+                ts.textContent = `${getTime()} — ${km} km`;
+            }
+
+            wrapper.appendChild(row);
+            wrapper.appendChild(ts);
+            container.appendChild(wrapper);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function showTyping() {
+            const container = document.getElementById('chatMessages');
+            const el = document.createElement('div');
+            el.className = 'message bot-message';
+            el.id = 'typingIndicator';
+
+            const row = document.createElement('div');
+            row.className = 'msg-row';
+
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar bot-avatar';
+            avatar.textContent = '🚴';
+
+            const ind = document.createElement('div');
+            ind.className = 'typing-indicator';
+            ind.innerHTML = '<span></span><span></span><span></span>';
+
+            row.appendChild(avatar);
+            row.appendChild(ind);
+            el.appendChild(row);
+            container.appendChild(el);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function hideTyping() {
+            const el = document.getElementById('typingIndicator');
+            if (el) el.remove();
+        }
+
+        function updateStats() {
+            document.getElementById('statQuestions').textContent = questionsAsked;
+            document.getElementById('statAnswers').textContent = answersFound;
+            const rate = questionsAsked > 0 ? Math.round((answersFound / questionsAsked) * 100) + '%' : '—';
+            document.getElementById('statRate').textContent = rate;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('userInput');
+            const question = input.value.trim();
+            if (!question || isTyping) return;
+
+            addMessage(question, true);
+            input.value = '';
+            questionsAsked++;
+
+            isTyping = true;
+            input.disabled = true;
+            document.getElementById('sendButton').disabled = true;
+
+            showTyping();
+
+            setTimeout(() => {
+                hideTyping();
+                const match = findBestMatch(question);
+
+                if (match) {
+                    addMessage(match.response);
+                    answersFound++;
+                } else {
+                    addMessage("🏁 Désolé, je ne peux répondre qu'aux 10 questions du parcours. Les thèmes disponibles sont : PSM, décomptes, échéances, rebond assurance, modifications de dates, tutelle, FIPEN, taux usuraire, OCI, et justifications CPP.");
+                }
+
+                updateStats();
+                isTyping = false;
+                input.disabled = false;
+                document.getElementById('sendButton').disabled = false;
+                input.focus();
+            }, 900);
+        }
+
+        function clearChat() {
+            const container = document.getElementById('chatMessages');
+            container.innerHTML = '';
+
+            questionsAsked = 0;
+            answersFound = 0;
+            totalKm = 0;
+            document.getElementById('topKm').textContent = '0';
+            updateStats();
+
+            // Re-add date divider and welcome message
+            const div = document.createElement('div');
+            div.className = 'date-divider';
+            div.textContent = 'Nouvelle session';
+            container.appendChild(div);
+
+            addMessage("🚴‍♂️ Bonjour ! Nouvelle session démarrée. Je suis prêt à répondre à vos questions sur les produits Cofidis. Utilisez le panneau latéral pour accéder rapidement aux thèmes disponibles.");
+        }
+
+        window.onload = () => {
+            document.getElementById('userInput').focus();
+            updateStats();
+        };
+    </script>
+</body>
+</html>
