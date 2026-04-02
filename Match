@@ -1,0 +1,32 @@
+Sub MatchAndCopy_Fast()
+
+    Dim ws1 As Worksheet, ws2 As Worksheet
+    Dim dict As Object
+    Dim lastRow1 As Long, lastRow2 As Long
+    Dim i As Long
+    
+    Set ws1 = ThisWorkbook.Sheets("Sheet1")
+    Set ws2 = ThisWorkbook.Sheets("Sheet2")
+    Set dict = CreateObject("Scripting.Dictionary")
+    
+    ' Load Sheet2 data into dictionary
+    lastRow2 = ws2.Cells(ws2.Rows.Count, "C").End(xlUp).Row
+    
+    For i = 1 To lastRow2
+        If Not dict.exists(ws2.Cells(i, 3).Value) Then
+            dict.Add ws2.Cells(i, 3).Value, ws2.Cells(i, 5).Value
+        End If
+    Next i
+    
+    ' Match with Sheet1
+    lastRow1 = ws1.Cells(ws1.Rows.Count, "A").End(xlUp).Row
+    
+    For i = 1 To lastRow1
+        If dict.exists(ws1.Cells(i, 1).Value) Then
+            ws1.Cells(i, 2).Value = dict(ws1.Cells(i, 1).Value)
+        End If
+    Next i
+    
+    MsgBox "Done (Fast Version)!"
+
+End Sub
