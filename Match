@@ -1,32 +1,39 @@
-Sub MatchAndCopy_Fast()
+Sub MatchAndCopy()
 
-    Dim ws1 As Worksheet, ws2 As Worksheet
-    Dim dict As Object
-    Dim lastRow1 As Long, lastRow2 As Long
-    Dim i As Long
+    Dim ws1 As Worksheet
+    Dim ws2 As Worksheet
+    Dim lastRow1 As Long
+    Dim lastRow2 As Long
+    Dim i As Long, j As Long
     
+    ' Define sheets
     Set ws1 = ThisWorkbook.Sheets("Sheet1")
     Set ws2 = ThisWorkbook.Sheets("Sheet2")
-    Set dict = CreateObject("Scripting.Dictionary")
     
-    ' Load Sheet2 data into dictionary
+    ' Get last rows
+    lastRow1 = ws1.Cells(ws1.Rows.Count, "A").End(xlUp).Row
     lastRow2 = ws2.Cells(ws2.Rows.Count, "C").End(xlUp).Row
     
-    For i = 1 To lastRow2
-        If Not dict.exists(ws2.Cells(i, 3).Value) Then
-            dict.Add ws2.Cells(i, 3).Value, ws2.Cells(i, 5).Value
-        End If
-    Next i
-    
-    ' Match with Sheet1
-    lastRow1 = ws1.Cells(ws1.Rows.Count, "A").End(xlUp).Row
-    
+    ' Loop through Sheet1 column A
     For i = 1 To lastRow1
-        If dict.exists(ws1.Cells(i, 1).Value) Then
-            ws1.Cells(i, 2).Value = dict(ws1.Cells(i, 1).Value)
-        End If
+        
+        ' Loop through Sheet2 column C
+        For j = 1 To lastRow2
+            
+            ' Compare values
+            If ws1.Cells(i, 1).Value = ws2.Cells(j, 3).Value Then
+                
+                ' Copy Column E from Sheet2 → put in Column B of Sheet1
+                ws1.Cells(i, 2).Value = ws2.Cells(j, 5).Value
+                
+                Exit For ' Stop searching once match is found
+                
+            End If
+            
+        Next j
+        
     Next i
-    
-    MsgBox "Done (Fast Version)!"
+
+    MsgBox "Done!"
 
 End Sub
