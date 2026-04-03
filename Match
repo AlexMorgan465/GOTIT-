@@ -1,258 +1,33 @@
-Dim currentRow As Long
-Dim isEditing As Boolean
+Bonjour,
 
-Private Sub CommandButton3_Click()
-    On Error GoTo ErrHandler
-    
-    If ThisWorkbook.Path = "" Then
-        MsgBox "Le classeur n'a pas encore été enregistré. Utilisez 'Enregistrer sous'.", vbExclamation
-        Exit Sub
-    End If
-    
-    ThisWorkbook.Save
-    MsgBox "Classeur sauvegardé avec succès.", vbInformation
-    Exit Sub
+Suite à la réception des documents DIRCO pour vérification de leur accessibilité, j’ai procédé à une analyse du balisage HTML conformément aux bonnes pratiques et aux exigences en matière d’accessibilité (notamment les recommandations WCAG).
 
-ErrHandler:
-    MsgBox "Erreur lors de la sauvegarde : " & Err.Description, vbCritical
-End Sub
+Au cours de cette vérification, plusieurs anomalies ont été constatées de manière récurrente dans les deux documents analysés. Vous trouverez ci-dessous un récapitulatif détaillé :
 
-Private Sub modifier_Click()
+1. Utilisation incorrecte des balises de structure (H1 à H3)
+Des balises "<p>" et "<span>" sont imbriquées à l’intérieur des balises de titre ("<h1>" à "<h3>"), ce qui est contraire aux bonnes pratiques HTML.
+Les balises de titre doivent contenir uniquement du texte ou des éléments inline appropriés, afin de garantir une bonne interprétation par les technologies d’assistance (lecteurs d’écran notamment).
 
-    If currentRow = 0 Then
-        MsgBox "Veuillez d'abord rechercher et sélectionner une ligne à modifier.", vbExclamation
-        Exit Sub
-    End If
-    
-    If ValidateData() Then
-        UpdateData
-        ClearForm
-        MsgBox "Données modifiées avec succès!", vbInformation
-        MsgBox "N'oubliez pas de sauvegarder avant de quitter ;)", vbInformation
-        isEditing = False
-        currentRow = 0
-    End If
+2. Mauvaise structuration des listes
+Certaines listes ne sont pas balisées avec les balises appropriées telles que "<ul>", "<li>" ou "<ol>".
+À la place, des balises génériques comme "<div>" sont utilisées, ce qui empêche une restitution correcte de l’information pour les utilisateurs utilisant des outils d’assistance.
 
-    refdos.Value = ""
-    typesignature.Value = ""
-    decision.Value = ""
-    comment.Value = ""
+De plus, l’utilisation de balises "<div>" à l’intérieur des balises de titre ("<h1>") a également été observée, ce qui est non conforme et peut perturber la hiérarchie du contenu.
 
-End Sub
+3. Absence de texte de remplacement pour les liens
+Certains liens ne disposent pas de texte alternatif explicite ou descriptif.
+Cela nuit à la compréhension du contexte et de la destination du lien, en particulier pour les utilisateurs de lecteurs d’écran.
 
-Private Sub CommandButton1_Click()
-    Me.BackColor = RGB(102, 102, 102)
-    Me.ForeColor = vbWhite
-End Sub
+4. Liens non balisés correctement
+Des éléments interactifs visuellement présentés comme des liens ne sont pas balisés avec la balise "<a>", ce qui les rend inaccessibles au clavier et non reconnus par les technologies d’assistance.
 
-Private Sub CommandButton2_Click()
-    Me.ForeColor = vbBlack
-    Me.BackColor = RGB(240, 240, 240)
-End Sub
+---
 
-Private Sub UserForm_Initialize()
+Ces problèmes impactent directement l’accessibilité des documents, notamment pour les personnes en situation de handicap (utilisateurs de lecteurs d’écran, navigation clavier, etc.), et ne respectent pas les standards d’accessibilité numérique.
 
-    Me.StartUpPosition = 0
-    Me.Left = Application.Left + (Application.Width - Me.Width) / 2
-    Me.Top = Application.Top + (Application.Height - Me.Height) / 2
+Des captures d’écran illustrant ces anomalies sont disponibles pour les deux documents concernés et peuvent être fournies pour faciliter la correction.
 
-    typesignature.Clear
-    typesignature.AddItem "SE"
-    typesignature.AddItem "Papier"
-    
-    decision.Clear
-    decision.AddItem "OCA"
-    decision.AddItem "OCR"
-    decision.AddItem "OCI"
-    decision.AddItem "CPP"
-    decision.AddItem "TDT"
-    
-    agent.Value = Environ("USERNAME")
+Je reste à votre disposition pour toute précision complémentaire ou pour accompagner les corrections nécessaires.
 
-End Sub
-
-Private Sub valider_Click()
-
-    Dim ws As Worksheet
-    Dim ligne As Long
-    Dim refValue As String
-    Dim lastRow As Long
-    Dim i As Long
-
-    Set ws = ThisWorkbook.Worksheets("OCAOCR")
-
-    refValue = refdos.Value
-
-    If Trim(refValue) = "" Then
-        MsgBox "Veuillez saisir une référence dossier.", vbExclamation
-        Exit Sub
-    End If
-
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
-
-    ' Vérification doublon (uniquement refdos maintenant)
-    For i = 2 To lastRow
-        If ws.Cells(i, 3).Value = refValue Then
-            MsgBox "La référence dossier '" & refValue & "' existe déjà !", vbCritical
-            Exit Sub
-        End If
-    Next i
-
-    ligne = lastRow + 1
-
-    With ws
-        .Cells(ligne, 1).Value = agent.Value
-        .Cells(ligne, 2).Value = Now
-        .Cells(ligne, 3).Value = refdos.Value
-    End With
-
-    refdos.Value = ""
-    typesignature.Value = ""
-    decision.Value = ""
-    comment.Value = ""
-
-    MsgBox "Dossier ajouté avec succès !", vbInformation
-
-End Sub
-
-Private Sub vue_Click()
-    If vue.ListIndex >= 0 Then LoadSelectedData
-End Sub
-
-Sub LoadSelectedData()
-
-    If vue.ListIndex < 0 Then Exit Sub
-    
-    Dim ws As Worksheet
-    Set ws = ThisWorkbook.Worksheets("OCAOCR")
-    
-    Dim valueContrat As String
-    valueContrat = vue.List(vue.ListIndex, 1)
-
-    Dim lastRow As Long, i As Long
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
-    
-    For i = 2 To lastRow
-        If ws.Cells(i, 2).Value = valueContrat Then
-            currentRow = i
-            Exit For
-        End If
-    Next i
-    
-    With ws
-        agent.Value = .Cells(i, 1).Value
-        refdos.Value = .Cells(i, 3).Value
-        typesignature.Value = .Cells(i, 4).Value
-        decision.Value = .Cells(i, 5).Value
-        comment.Value = .Cells(i, 6).Value
-    End With
-
-    isEditing = True
-
-End Sub
-
-Private Sub recherche_Click()
-    SearchData
-End Sub
-
-Sub SearchData()
-
-    Dim ws As Worksheet
-    Set ws = ThisWorkbook.Worksheets("OCAOCR")
-
-    vue.Clear
-    
-    If ws.Cells(2, 1).Value = "" Then
-        MsgBox "Aucune donnée trouvée.", vbInformation
-        Exit Sub
-    End If
-
-    Dim lastRow As Long
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
-    
-    vue.ColumnCount = 5
-    
-    Dim searchContract As String
-    searchContract = InputBox("Entrez la référence dossier :", "Recherche")
-
-    Dim i As Long
-    
-    If searchContract = "" Then
-        vue.List = ws.Range("A2:F" & lastRow).Value
-        Exit Sub
-    End If
-    
-    Dim results As Collection
-    Set results = New Collection
-    
-    For i = 2 To lastRow
-        If InStr(1, ws.Cells(i, 3).Value, searchContract, vbTextCompare) > 0 Then
-            results.Add i
-        End If
-    Next i
-    
-    If results.Count = 0 Then
-        MsgBox "Aucun dossier trouvé.", vbInformation
-        Exit Sub
-    End If
-    
-    Dim arr()
-    ReDim arr(1 To results.Count, 1 To 5)
-    
-    For i = 1 To results.Count
-        arr(i, 1) = ws.Cells(results(i), 1).Value
-        arr(i, 2) = ws.Cells(results(i), 2).Value
-        arr(i, 3) = ws.Cells(results(i), 3).Value
-        arr(i, 4) = ws.Cells(results(i), 4).Value
-        arr(i, 5) = ws.Cells(results(i), 5).Value
-    Next i
-
-    vue.List = arr
-
-End Sub
-
-Function ValidateData()
-
-    ValidateData = True
- 
-    If Trim(comment.Value) = "" Then
-        MsgBox "Veuillez laisser un commentaire.", vbExclamation
-        ValidateData = False
-        Exit Function
-    End If
-    
-    If decision.Value = "" Then
-        MsgBox "Veuillez sélectionner une décision", vbExclamation
-        ValidateData = False
-        Exit Function
-    End If
-    
-    If typesignature.Value = "" Then
-        MsgBox "Veuillez sélectionner un type de signature", vbExclamation
-        ValidateData = False
-        Exit Function
-    End If
-
-End Function
-
-Sub ClearForm()
-
-    refdos.Value = ""
-    typesignature.Value = ""
-    decision.Value = ""
-    comment.Value = ""
-
-End Sub
-
-Sub UpdateData()
-
-    Dim ws As Worksheet
-    Set ws = ThisWorkbook.Worksheets("OCAOCR")
-    
-    With ws
-        .Cells(currentRow, 4).Value = typesignature.Value
-        .Cells(currentRow, 5).Value = decision.Value
-        .Cells(currentRow, 6).Value = comment.Value
-    End With
-
-End Sub
+Cordialement,
+[Votre nom]
