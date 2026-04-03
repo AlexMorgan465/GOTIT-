@@ -1,28 +1,20 @@
-
 Dim currentRow As Long
+Dim isEditing As Boolean
 
 Private Sub CommandButton3_Click()
- On Error GoTo ErrHandler
+    On Error GoTo ErrHandler
     
-    ' Vérifie si le classeur a déjà été enregistré
     If ThisWorkbook.Path = "" Then
         MsgBox "Le classeur n'a pas encore été enregistré. Utilisez 'Enregistrer sous'.", vbExclamation
         Exit Sub
     End If
     
-    ' Sauvegarde
     ThisWorkbook.Save
-    
     MsgBox "Classeur sauvegardé avec succès.", vbInformation
-    
     Exit Sub
 
 ErrHandler:
     MsgBox "Erreur lors de la sauvegarde : " & Err.Description, vbCritical
-End Sub
-
-Private Sub Frame2_Click()
-
 End Sub
 
 Private Sub modifier_Click()
@@ -35,47 +27,35 @@ Private Sub modifier_Click()
     If ValidateData() Then
         UpdateData
         ClearForm
-        MsgBox "Données modifiées avec succés!", vbInformation
+        MsgBox "Données modifiées avec succès!", vbInformation
         MsgBox "N'oubliez pas de sauvegarder avant de quitter ;)", vbInformation
         isEditing = False
         currentRow = 0
     End If
-    typecredit.Value = ""
-typeproduit.Value = ""
-refdos.Value = ""
-typesignature.Value = ""
-decision.Value = ""
-comment.Value = ""
+
+    refdos.Value = ""
+    typesignature.Value = ""
+    decision.Value = ""
+    comment.Value = ""
+
 End Sub
 
-
 Private Sub CommandButton1_Click()
-Me.BackColor = RGB(102, 102, 102)
-Me.ForeColor = vbWhite
+    Me.BackColor = RGB(102, 102, 102)
+    Me.ForeColor = vbWhite
 End Sub
 
 Private Sub CommandButton2_Click()
-Me.ForeColor = vbBlack
-Me.BackColor = RGB(240, 240, 240)
+    Me.ForeColor = vbBlack
+    Me.BackColor = RGB(240, 240, 240)
 End Sub
 
-Sub UserForm_Initialize()
+Private Sub UserForm_Initialize()
 
     Me.StartUpPosition = 0
     Me.Left = Application.Left + (Application.Width - Me.Width) / 2
     Me.Top = Application.Top + (Application.Height - Me.Height) / 2
-    ' Initialiser les statuts
-    typecredit.Clear
-    typecredit.AddItem "AUG"
-    typecredit.AddItem "OUV"
-        
-    typeproduit.AddItem "AUG ACC"
-    typeproduit.AddItem "OUV ACC"
-    typeproduit.AddItem "AUG PART"
-    typeproduit.AddItem "OUV PSM"
-    typeproduit.AddItem "OUV PSM/PSM"
-    typeproduit.AddItem "OUV PSM d'AUG"
-    
+
     typesignature.Clear
     typesignature.AddItem "SE"
     typesignature.AddItem "Papier"
@@ -85,69 +65,62 @@ Sub UserForm_Initialize()
     decision.AddItem "OCR"
     decision.AddItem "OCI"
     decision.AddItem "CPP"
-    
     decision.AddItem "TDT"
     
     agent.Value = Environ("USERNAME")
+
 End Sub
 
-Sub valider_Click()
+Private Sub valider_Click()
 
-Dim ws As Worksheet
-Dim ligne As Long
-Dim refValue As String
-Dim lastRow As Long
-Dim i As Long
+    Dim ws As Worksheet
+    Dim ligne As Long
+    Dim refValue As String
+    Dim lastRow As Long
+    Dim i As Long
 
-Set ws = ThisWorkbook.Worksheets("OCAOCR")
+    Set ws = ThisWorkbook.Worksheets("OCAOCR")
 
-' Valeur tapée dans la textbox refdos
-refValue = refdos.Value
+    refValue = refdos.Value
 
-' Vérifier si refvide
-If Trim(refValue) = "" Then
-    MsgBox "Veuillez saisir une référence dossier.", vbExclamation
-    Exit Sub
-End If
-
-' Dernière ligne remplie
-lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
-
-' Vérification de doublon dans colonne 6
-For i = 2 To lastRow
-    If ws.Cells(i, 6).Value = refValue And ws.Cells(i, 4).Value = typecredit Then
-        MsgBox "? La référence dossier '" & refValue & "' existe déjà !", vbCritical, "Doublon détecté"
+    If Trim(refValue) = "" Then
+        MsgBox "Veuillez saisir une référence dossier.", vbExclamation
         Exit Sub
     End If
-Next i
 
-' Si aucun doublon alors ajouter la ligne
-ligne = lastRow + 1
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
 
-With ws
-    .Cells(ligne, 1).Value = agent.Value
-    .Cells(ligne, 2).Value = Now
-    .Cells(ligne, 4).Value = typecredit.Value
-    .Cells(ligne, 5).Value = typeproduit.Value
-    .Cells(ligne, 6).Value = refdos.Value
-End With
+    ' Vérification doublon (uniquement refdos maintenant)
+    For i = 2 To lastRow
+        If ws.Cells(i, 3).Value = refValue Then
+            MsgBox "La référence dossier '" & refValue & "' existe déjà !", vbCritical
+            Exit Sub
+        End If
+    Next i
 
-' Réinitialisation des champs
-typecredit.Value = ""
-typeproduit.Value = ""
-refdos.Value = ""
-typesignature.Value = ""
-decision.Value = ""
-comment.Value = ""
+    ligne = lastRow + 1
 
-MsgBox "Dossier ajouté avec succès !", vbInformation
+    With ws
+        .Cells(ligne, 1).Value = agent.Value
+        .Cells(ligne, 2).Value = Now
+        .Cells(ligne, 3).Value = refdos.Value
+    End With
+
+    refdos.Value = ""
+    typesignature.Value = ""
+    decision.Value = ""
+    comment.Value = ""
+
+    MsgBox "Dossier ajouté avec succès !", vbInformation
 
 End Sub
 
 Private Sub vue_Click()
     If vue.ListIndex >= 0 Then LoadSelectedData
 End Sub
+
 Sub LoadSelectedData()
+
     If vue.ListIndex < 0 Then Exit Sub
     
     Dim ws As Worksheet
@@ -168,22 +141,22 @@ Sub LoadSelectedData()
     
     With ws
         agent.Value = .Cells(i, 1).Value
-        typecredit.Value = .Cells(i, 4).Value
-        typeproduit.Value = .Cells(i, 5).Value
-        refdos.Value = .Cells(i, 6).Value
-        typesignature.Value = .Cells(i, 7).Value
-        decision.Value = .Cells(i, 8).Value
-        comment.Value = .Cells(i, 9).Value
-        
+        refdos.Value = .Cells(i, 3).Value
+        typesignature.Value = .Cells(i, 4).Value
+        decision.Value = .Cells(i, 5).Value
+        comment.Value = .Cells(i, 6).Value
     End With
 
     isEditing = True
+
 End Sub
 
 Private Sub recherche_Click()
     SearchData
 End Sub
+
 Sub SearchData()
+
     Dim ws As Worksheet
     Set ws = ThisWorkbook.Worksheets("OCAOCR")
 
@@ -197,18 +170,15 @@ Sub SearchData()
     Dim lastRow As Long
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
     
-    vue.ColumnCount = 6
-    vue.ColumnHeads = True
+    vue.ColumnCount = 5
     
     Dim searchContract As String
-    searchContract = InputBox("Entrez le référence dossier :", "Recherche")
+    searchContract = InputBox("Entrez la référence dossier :", "Recherche")
 
     Dim i As Long
     
     If searchContract = "" Then
-        Dim dataRange As Range
-        Set dataRange = ws.Range("A2:H" & lastRow)
-        vue.List = dataRange.Value
+        vue.List = ws.Range("A2:F" & lastRow).Value
         Exit Sub
     End If
     
@@ -216,18 +186,18 @@ Sub SearchData()
     Set results = New Collection
     
     For i = 2 To lastRow
-        If InStr(1, ws.Cells(i, 6).Value, searchContract, vbTextCompare) > 0 Then
+        If InStr(1, ws.Cells(i, 3).Value, searchContract, vbTextCompare) > 0 Then
             results.Add i
         End If
     Next i
     
     If results.Count = 0 Then
-        MsgBox "Aucun contrat trouvé.", vbInformation
+        MsgBox "Aucun dossier trouvé.", vbInformation
         Exit Sub
     End If
     
     Dim arr()
-    ReDim arr(1 To results.Count, 1 To 12)
+    ReDim arr(1 To results.Count, 1 To 5)
     
     For i = 1 To results.Count
         arr(i, 1) = ws.Cells(results(i), 1).Value
@@ -235,68 +205,54 @@ Sub SearchData()
         arr(i, 3) = ws.Cells(results(i), 3).Value
         arr(i, 4) = ws.Cells(results(i), 4).Value
         arr(i, 5) = ws.Cells(results(i), 5).Value
-        arr(i, 6) = ws.Cells(results(i), 6).Value
-            
     Next i
 
     vue.List = arr
+
 End Sub
+
 Function ValidateData()
-ValidateData = True
+
+    ValidateData = True
  
-  If Trim(comment.Value) = "" Then
+    If Trim(comment.Value) = "" Then
         MsgBox "Veuillez laisser un commentaire.", vbExclamation
-        TextBox1.SetFocus
-        ValidateData = False
-        Exit Function
-    End If
-    
-    If typecredit.Value = "" Then
-        MsgBox "Veuillez sélectionner un type de crédit", vbExclamation
-        ComboBox1.SetFocus
         ValidateData = False
         Exit Function
     End If
     
     If decision.Value = "" Then
         MsgBox "Veuillez sélectionner une décision", vbExclamation
-        ComboBox1.SetFocus
-        ValidateData = False
-        Exit Function
-    End If
-    
-    If typeproduit.Value = "" Then
-        MsgBox "Veuillez sélectionner le type de produit ", vbExclamation
-        ComboBox1.SetFocus
         ValidateData = False
         Exit Function
     End If
     
     If typesignature.Value = "" Then
         MsgBox "Veuillez sélectionner un type de signature", vbExclamation
-        ComboBox1.SetFocus
         ValidateData = False
         Exit Function
     End If
-    
+
 End Function
+
 Sub ClearForm()
-    typecredit.Value = ""
-    typeproduit.Value = ""
+
     refdos.Value = ""
     typesignature.Value = ""
-
     decision.Value = ""
+    comment.Value = ""
+
 End Sub
+
 Sub UpdateData()
+
     Dim ws As Worksheet
     Set ws = ThisWorkbook.Worksheets("OCAOCR")
     
     With ws
-        .Cells(currentRow, 3).Value = Now
-        .Cells(currentRow, 7).Value = typesignature.Value
-        .Cells(currentRow, 8).Value = decision.Value
-        .Cells(currentRow, 9).Value = comment.Value
-        .Cells(currentRow, 10).Value = .Cells(currentRow, 3).Value - .Cells(currentRow, 2).Value
+        .Cells(currentRow, 4).Value = typesignature.Value
+        .Cells(currentRow, 5).Value = decision.Value
+        .Cells(currentRow, 6).Value = comment.Value
     End With
+
 End Sub
