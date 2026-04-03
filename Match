@@ -1,33 +1,35 @@
 Bonjour,
 
-Suite à la réception des documents DIRCO pour vérification de leur accessibilité, j’ai procédé à une analyse du balisage HTML conformément aux bonnes pratiques et aux exigences en matière d’accessibilité (notamment les recommandations WCAG).
+Suite à la réception des documents DIRCO pour vérification de leur accessibilité, j’ai procédé à une analyse du balisage des PDF conformément aux bonnes pratiques et aux exigences en matière d’accessibilité (notamment le standard PDF/UA).
 
 Au cours de cette vérification, plusieurs anomalies ont été constatées de manière récurrente dans les deux documents analysés. Vous trouverez ci-dessous un récapitulatif détaillé :
 
-1. Utilisation incorrecte des balises de structure (H1 à H3)
-Des balises "<p>" et "<span>" sont imbriquées à l’intérieur des balises de titre ("<h1>" à "<h3>"), ce qui est contraire aux bonnes pratiques HTML.
-Les balises de titre doivent contenir uniquement du texte ou des éléments inline appropriés, afin de garantir une bonne interprétation par les technologies d’assistance (lecteurs d’écran notamment).
+1. Utilisation incorrecte des balises de titre (H1 à H3)
+Des balises de type P et Span sont imbriquées à l’intérieur des balises de titre (H1 à H3).
+Dans un PDF structuré, les balises de titre doivent contenir uniquement du texte pertinent sans éléments parasites, afin de garantir une navigation correcte via les technologies d’assistance (lecteurs d’écran).
 
 2. Mauvaise structuration des listes
-Certaines listes ne sont pas balisées avec les balises appropriées telles que "<ul>", "<li>" ou "<ol>".
-À la place, des balises génériques comme "<div>" sont utilisées, ce qui empêche une restitution correcte de l’information pour les utilisateurs utilisant des outils d’assistance.
+Certaines listes ne sont pas balisées avec les balises appropriées telles que L, LI et LBody.
+À la place, des balises génériques sont utilisées, ce qui empêche une restitution correcte de la structure des listes pour les utilisateurs de lecteurs d’écran.
 
-De plus, l’utilisation de balises "<div>" à l’intérieur des balises de titre ("<h1>") a également été observée, ce qui est non conforme et peut perturber la hiérarchie du contenu.
+De plus, l’utilisation de balises de type Div à l’intérieur des balises de titre (H1) a également été observée, ce qui est non conforme et perturbe la hiérarchie logique du document.
 
 3. Absence de texte de remplacement pour les liens
-Certains liens ne disposent pas de texte alternatif explicite ou descriptif.
-Cela nuit à la compréhension du contexte et de la destination du lien, en particulier pour les utilisateurs de lecteurs d’écran.
+Certains liens ne disposent pas de texte de remplacement (texte descriptif associé).
+Cela nuit à la compréhension de la destination du lien pour les utilisateurs de technologies d’assistance.
 
 4. Liens non balisés correctement
-Des éléments interactifs visuellement présentés comme des liens ne sont pas balisés avec la balise "<a>", ce qui les rend inaccessibles au clavier et non reconnus par les technologies d’assistance.
+Certains éléments visuellement identifiés comme des liens ne sont pas balisés en tant que Link dans la structure du PDF.
+Par conséquent, ils ne sont pas reconnus comme interactifs et ne sont pas accessibles via la navigation clavier ou les lecteurs d’écran.
 
 ---
 
-Ces problèmes impactent directement l’accessibilité des documents, notamment pour les personnes en situation de handicap (utilisateurs de lecteurs d’écran, navigation clavier, etc.), et ne respectent pas les standards d’accessibilité numérique.
+Ces anomalies impactent directement l’accessibilité des documents PDF, notamment pour les personnes en situation de handicap (utilisateurs de lecteurs d’écran, navigation clavier, etc.), et ne respectent pas les exigences du standard PDF/UA.
 
-Des captures d’écran illustrant ces anomalies sont disponibles pour les deux documents concernés et peuvent être fournies pour faciliter la correction.
+Des captures d’écran illustrant ces anomalies sont disponibles pour les deux documents concernés et peuvent être fournies afin de faciliter leur correction.
 
 Je reste à votre disposition pour toute précision complémentaire ou pour accompagner les corrections nécessaires.
 
 Cordialement,
-[Votre nom]
+Mohamed HAMDANI
+EIDS Maroc
