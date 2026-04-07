@@ -1,12 +1,106 @@
+
 Option Explicit
 
 Dim FSO As Object
 Dim basePath As String
-Dim ROOT_PATH As String
+
 
 Private Sub Workbook_Open()
     ' Afficher le menu au démarrage
     ShowMainMenu
+End Sub
+
+Private Sub CommandButton3_Click()
+    Dim FSO As Object
+    Set FSO = CreateObject("Scripting.FileSystemObject")
+    
+    Dim dossierSource As String
+    Dim dstPath As String
+    Dim nomDossier As String
+    Dim destinationFinale As String
+    Dim statutFinal As String
+    Dim structType As StructureType
+    Dim srcPath As String
+    Dim fileName As String
+    Dim ws As Worksheet
+    Dim row As Long
+Dim wsLog As Worksheet
+    Dim wsTrace As Worksheet
+    Dim lastRow As Long
+    Dim i As Long
+    Dim outputRow As Long
+    
+    Dim agentName As String
+    Dim Comment As String
+    Dim Domaine As String
+    Dim SousDomaine As String
+    Dim startDate As Variant
+    Dim endDate As Variant
+    Dim details As String
+    Dim status As String
+    Dim parts() As String
+    
+    Set wsLog = ThisWorkbook.Sheets("LOG_ACTIONS")
+    Set wsTrace = ThisWorkbook.Sheets("SHEET_TRACE_NAME")
+    
+    ' Clear old data (except headers)
+    wsTrace.Rows("2:" & wsTrace.Rows.Count).ClearContents
+    
+    lastRow = wsLog.Cells(wsLog.Rows.Count, "A").End(xlUp).row
+    outputRow = 2
+    
+    i = 2 ' Start after header
+    
+    Do While i <= lastRow
+        
+        ' First row (A TRAITER ? EN COURS)
+        fileName = wsLog.Cells(i, 3).Value
+        Domaine = wsLog.Cells(i, 4).Value
+        SousDomaine = wsLog.Cells(i, 7).Value
+        agentName = wsLog.Cells(i, 5).Value
+        startDate = wsLog.Cells(i, 1).Value
+        Comment = wsLog.Cells(i + 1, 8).Value
+        
+        ' Second row (EN COURS ? TRAITES / NON CONFORME)
+        If i + 1 <= lastRow Then
+            
+            endDate = wsLog.Cells(i + 1, 1).Value
+            details = wsLog.Cells(i + 1, 6).Value
+            
+            ' Extract last word after "?"
+            If InStr(details, "?") > 0 Then
+                parts = Split(details, "?")
+                status = Trim(parts(UBound(parts)))
+            Else
+                status = details
+            End If
+            
+            ' Write to SHEET_TRACE_NAME
+            wsTrace.Cells(outputRow, 1).Value = fileName
+            wsTrace.Cells(outputRow, 2).Value = Domaine
+            wsTrace.Cells(outputRow, 3).Value = SousDomaine
+            wsTrace.Cells(outputRow, 4).Value = status
+            wsTrace.Cells(outputRow, 5).Value = startDate
+            wsTrace.Cells(outputRow, 6).Value = endDate
+            wsTrace.Cells(outputRow, 7).Value = agentName
+            wsTrace.Cells(outputRow, 8).Value = wsTrace.Cells(outputRow, 6).Value - wsTrace.Cells(outputRow, 5).Value
+            wsTrace.Cells(outputRow, 9).Value = Comment
+            
+            
+            outputRow = outputRow + 1
+            
+        End If
+        
+        i = i + 2 ' Jump to next pair
+        
+    Loop
+    
+    MsgBox "Trace generated successfully!", vbInformation
+
+    
+    ' Recharger
+    LoadFichiers
+    txtCommentaire.Value = ""
 End Sub
 
 Private Sub UserForm_Initialize()
@@ -33,30 +127,20 @@ Private Sub UserForm_Initialize()
     cmbStatutDestination.ListIndex = 0
     txtAgent.Value = Environ("USERNAME")
     
-    ' Définir le chemin racine (à adapter si nécessaire)
-    ROOT_PATH = "\\UF11-a03\eids-eaa-pdf-statiques\Accessibilité\"
-    basePath = ROOT_PATH   ' pour cohérence avec la deuxième partie
     
-    ' Remplir la liste des racines pour l'onglet "Recherche"
+    
+    basePath = "\\UF11-a03\eids-eaa-pdf-statiques\Accessibilité\"
+    
     cboRacine.AddItem "ACM"
     cboRacine.AddItem "Bouygues telecom"
     cboRacine.AddItem "CIC CIB ASSET SERVICING"
     cboRacine.AddItem "CONTRATHEQUE"
     cboRacine.AddItem "DIRCO"
     
-    ' Configuration des listes
     lstResultats.ColumnCount = 2
     lstResultats.ColumnWidths = "300 pt;0 pt"
-    
-    ' --- Nouveau : Configuration du combobox de sous-catégorie (pour DIRCO) ---
-    cmbSousCategorie.Visible = False
-    cmbSousCategorie.Enabled = False
-    cmbSousDomaine.Visible = True   ' par défaut
 End Sub
 
-' --------------------------------------------------------------
-' Chargement des domaines depuis la racine
-' --------------------------------------------------------------
 Private Sub LoadDomaines()
     Dim col As Collection
     Dim item As Variant
@@ -73,37 +157,14 @@ Private Sub LoadDomaines()
     End If
 End Sub
 
-' --------------------------------------------------------------
-' Quand le domaine change
-' --------------------------------------------------------------
 Private Sub cmbDomaine_Change()
     Dim col As Collection
     Dim item As Variant
     
-    cmbSousCategorie.Clear
     cmbSousDomaine.Clear
     lstFichiers.Clear
     
     If cmbDomaine.Value = "" Or cmbDomaine.Value Like "[*]*" Then Exit Sub
-    
-    ' --- Gestion spéciale pour DIRCO (nouvelle hiérarchie) ---
-    If cmbDomaine.Value = "DIRCO" Then
-        ' Afficher et remplir la sous-catégorie (CM / CIC)
-        cmbSousCategorie.AddItem "CM"
-        cmbSousCategorie.AddItem "CIC"
-        cmbSousCategorie.Enabled = True
-        cmbSousCategorie.Visible = True
-        cmbSousCategorie.ListIndex = 0   ' sélectionne le premier
-        ' Le sous-domaine (FICHES CLIENTS) sera chargé après le choix de la catégorie
-        cmbSousDomaine.Enabled = False
-        cmbSousDomaine.Visible = False
-        Exit Sub
-    End If
-    
-    ' --- Pour les autres domaines, comportement original ---
-    cmbSousCategorie.Visible = False
-    cmbSousCategorie.Enabled = False
-    cmbSousDomaine.Visible = True
     
     ' Déterminer la structure
     Dim structType As StructureType
@@ -142,80 +203,45 @@ Private Sub cmbDomaine_Change()
     End If
 End Sub
 
-' --------------------------------------------------------------
-' Quand la sous-catégorie DIRCO (CM/CIC) change
-' --------------------------------------------------------------
-Private Sub cmbSousCategorie_Change()
-    If cmbDomaine.Value <> "DIRCO" Then Exit Sub
-    If cmbSousCategorie.ListIndex = -1 Then Exit Sub
-    
-    cmbSousDomaine.Clear
-    ' Ici, nous chargeons le sous-domaine "FICHES CLIENTS" (fixe pour l'instant)
-    ' Si d'autres sous-dossiers peuvent exister, utilisez GetSubFolders
-    cmbSousDomaine.AddItem "FICHES CLIENTS"
-    cmbSousDomaine.Enabled = True
-    cmbSousDomaine.Visible = True
-    cmbSousDomaine.ListIndex = 0
-End Sub
-
-' --------------------------------------------------------------
-' Quand le sous-domaine change (pour les domaines autres que DIRCO)
-' --------------------------------------------------------------
 Private Sub cmbSousDomaine_Change()
-    ' Pour DIRCO, ce changement est déjà géré par cmbSousCategorie_Change,
-    ' donc on recharge les fichiers ici aussi
-    If cmbDomaine.Value = "DIRCO" Then
-        LoadFichiers
-    Else
-        lstFichiers.Clear
-    End If
+    lstFichiers.Clear
 End Sub
 
-' --------------------------------------------------------------
-' Quand le statut source change
-' --------------------------------------------------------------
 Private Sub cmbStatutSource_Change()
     LoadFichiers
 End Sub
-
-' --------------------------------------------------------------
-' Chargement des fichiers dans lstFichiers selon le chemin construit
-' --------------------------------------------------------------
 Private Sub LoadFichiers()
     Dim path As String
     
     lstFichiers.Clear
     
-    If cmbDomaine = "" Or cmbStatutSource = "" Then Exit Sub
+    If cmbDomaine = "" Or cmbSousDomaine = "" Or cmbStatutSource = "" Then Exit Sub
     
-    ' --- Pour DIRCO, chemin inclut la sous-catégorie ---
-    If cmbDomaine.Value = "DIRCO" Then
-        If cmbSousCategorie.Value = "" Or cmbSousDomaine.Value = "" Then Exit Sub
-        path = ROOT_PATH & "DIRCO\" & cmbSousCategorie.Value & "\" & _
-               cmbSousDomaine.Value & "\" & cmbStatutSource.Value
-    Else
-        ' --- Autres domaines ---
-        Dim structType As StructureType
-        structType = GetDomainStructure(cmbDomaine.Value)
+    ' Construire le chemin selon la structure
+    Dim structType As StructureType
+    structType = GetDomainStructure(cmbDomaine.Value)
+            
+    Select Case cmbDomaine.Value
+        Case "Bouygues telecom", "CIC CIB ASSET SERVICING"
+            path = ROOT_PATH & "\" & cmbDomaine.Value & "\" & cmbStatutSource.Value
+            
+        Case "ACM"
+            path = ROOT_PATH & "\" & cmbDomaine.Value & "\" & _
+                   cmbSousDomaine.Value & "\" & cmbStatutSource.Value
         
-        Select Case structType
-            Case SIMPLE
-                path = ROOT_PATH & cmbDomaine.Value & "\" & cmbStatutSource.Value
-                
-            Case Complex
-                If cmbSousDomaine.Value = "" Then Exit Sub
-                path = ROOT_PATH & cmbDomaine.Value & "\" & _
-                       cmbSousDomaine.Value & "\" & cmbStatutSource.Value
-                
-            Case THREE_LEVEL ' ACM
-                If cmbStatutSource.Value = "A TRAITER" Then
-                    path = ROOT_PATH & cmbDomaine.Value & "\A TRAITER\" & cmbSousDomaine.Value
-                ElseIf cmbStatutSource.Value = "EN COURS" Then
-                    path = ROOT_PATH & cmbDomaine.Value & "\EN COURS\" & cmbSousDomaine.Value
-                End If
-        End Select
-    End If
+        Case "DIRCO"
+            path = ROOT_PATH & "\" & cmbDomaine.Value & "\" & _
+                   cmbSousDomaine.Value & "\" & "FICHES CLIENTS" & "\" & cmbStatutSource.Value
+            
+        Case THREE_LEVEL
+            If cmbStatutSource.Value = "A TRAITER" Then
+                path = ROOT_PATH & "\" & cmbDomaine.Value & "\A TRAITER\" & cmbSousDomaine.Value
+            ElseIf cmbStatutSource.Value = "EN COURS" Then
+                path = ROOT_PATH & "\" & cmbDomaine.Value & "\EN COURS\" & cmbSousDomaine.Value
+            End If
+    End Select
     
+    MsgBox path
     ' Charger les fichiers
     If FolderExists(path) Then
         LoadFilesToList lstFichiers, path
@@ -223,10 +249,6 @@ Private Sub LoadFichiers()
         lstFichiers.AddItem "[DOSSIER VIDE]"
     End If
 End Sub
-
-' --------------------------------------------------------------
-' Bouton Déplacer (A TRAITER -> EN COURS) pour un fichier
-' --------------------------------------------------------------
 Private Sub cmdDeplacer_Click()
     Dim srcPath As String, dstPath As String
     Dim fileName As String
@@ -247,57 +269,52 @@ Private Sub cmdDeplacer_Click()
     fileName = lstFichiers.Value
     
     ' Construire les chemins
-    ' Source : le fichier est dans le dossier correspondant au statut source
-    ' Destination : le dossier EN COURS correspondant
+    Dim structType As StructureType
+    structType = GetDomainStructure(cmbDomaine.Value)
     
-    If cmbDomaine.Value = "DIRCO" Then
-        ' Source : dans A TRAITER (statut source)
-        srcPath = ROOT_PATH & "DIRCO\" & cmbSousCategorie.Value & "\" & _
-                  cmbSousDomaine.Value & "\" & "A TRAITER"   ' on suppose toujours A TRAITER en source
-        ' Si le statut source peut être autre, utilisez cmbStatutSource.Value
-        ' Mais dans votre logique, c'est "A TRAITER" -> "EN COURS"
-        dstPath = ROOT_PATH & "DIRCO\" & cmbSousCategorie.Value & "\" & _
-                  cmbSousDomaine.Value & "\" & "EN COURS"
-    Else
-        ' Source
-        Dim structType As StructureType
-        structType = GetDomainStructure(cmbDomaine.Value)
-        
-        Select Case structType
-            Case SIMPLE
-                srcPath = ROOT_PATH & cmbDomaine & "\" & "A TRAITER"
-            Case Complex
-                srcPath = ROOT_PATH & cmbDomaine & "\" & cmbSousDomaine & "\" & "A TRAITER"
-            Case THREE_LEVEL
-                ' Ici on suppose que le statut source est "A TRAITER" ou "EN COURS"
-                ' On utilise cmbStatutSource pour déterminer le bon dossier
-                If cmbStatutSource.Value = "A TRAITER" Then
-                    srcPath = ROOT_PATH & cmbDomaine & "\A TRAITER\" & cmbSousDomaine
-                Else
-                    srcPath = ROOT_PATH & cmbDomaine & "\" & "A TRAITER"
-                End If
-        End Select
-        
-        ' Destination
-        Select Case structType
-            Case SIMPLE
-                dstPath = ROOT_PATH & cmbDomaine & "\" & "EN COURS"
-            Case Complex
-                dstPath = ROOT_PATH & cmbDomaine & "\" & cmbSousDomaine & "\" & "EN COURS"
-            Case THREE_LEVEL
-                If cmbStatutSource.Value = "A TRAITER" Then
-                    dstPath = ROOT_PATH & cmbDomaine & "\EN COURS\" & cmbSousDomaine
-                Else
-                    dstPath = ROOT_PATH & cmbDomaine & "\" & "EN COURS"
-                End If
-        End Select
-    End If
+    ' Source
+    Select Case structType
+        Case "Bouygues telecom", "CIC CIB ASSET SERVICING"
+            srcPath = ROOT_PATH & "\" & cmbDomaine & "\" & "A TRAITER"
+            
+        Case "ACM"
+            srcPath = ROOT_PATH & "\" & cmbDomaine & "\" & _
+                     cmbSousDomaine & "\" & "A TRAITER"
+                    
+        Case "DIRCO"
+            srcPath = ROOT_PATH & "\" & cmbDomaine & "\" & _
+                     cmbSousDomaine & "\" & "A TRAITER"
+            
+        Case THREE_LEVEL
+            If Label6.Caption = "A TRAITER" Then
+                srcPath = ROOT_PATH & "\" & cmbDomaine & "\A TRAITER\" & cmbSousDomaine
+            Else
+                srcPath = ROOT_PATH & "\" & cmbDomaine & "\" & "A TRAITER"
+            End If
+    End Select
     
     srcPath = srcPath & "\" & fileName
-    dstPath = dstPath & "\" & fileName
     
-    ' Créer dossier destination si besoin
+    ' Destination
+    Select Case structType
+        Case SIMPLE
+            dstPath = ROOT_PATH & "\" & cmbDomaine & "\" & "EN COURS"
+            
+        Case Complex
+            dstPath = ROOT_PATH & "\" & cmbDomaine & "\" & _
+                     cmbSousDomaine & "\" & "EN COURS"
+            
+        Case THREE_LEVEL
+            If Label6.Caption = "A TRAITER" Then
+                dstPath = ROOT_PATH & "\" & cmbDomaine & "\EN COURS\" & cmbSousDomaine
+            Else
+                dstPath = ROOT_PATH & "\" & cmbDomaine & "\" & "EN COURS"
+            End If
+    End Select
+    
+    ' Créer dossier si besoin
     CreateFolderIfNotExists dstPath
+    dstPath = dstPath & "\" & fileName
     
     ' Déplacer
     Name srcPath As dstPath
@@ -307,36 +324,26 @@ Private Sub cmdDeplacer_Click()
     row = GetTraceRow(ws, fileName)
     
     ' Journaliser
-    LogAction "Déplacement", fileName, cmbDomaine.Value, cmbSousDomaine.Value, txtAgent, txtCommentaire.Value, _
+       LogAction "Déplacement", fileName, cmbDomaine.Value, cmbSousDomaine.Value, txtAgent, txtCommentaire.Value, _
               cmbStatutSource & " ? " & cmbStatutDestination
     
     ' Recharger
     LoadFichiers
     txtCommentaire.Value = ""
     
-    MsgBox "Fichier déplacé avec succès !", vbInformation
+    MsgBox "? Fichier déplacé avec succès !", vbInformation
 End Sub
 
-' --------------------------------------------------------------
-' Bouton Rafraîchir
-' --------------------------------------------------------------
 Private Sub cmdRafraichir_Click()
     LoadFichiers
 End Sub
 
-' --------------------------------------------------------------
-' Bouton Annuler (fermer le formulaire)
-' --------------------------------------------------------------
 Private Sub cmdAnnuler_Click()
     Unload Me
 End Sub
 
-' --------------------------------------------------------------
-' Bouton pour passer de EN COURS à TRAITES / NON CONFORME (fichier)
-' Ce bouton utilise un sélecteur de dossier pour copier un dossier
-' (Attention : la logique semble mêler fichier et dossier ; à clarifier)
-' --------------------------------------------------------------
 Private Sub CommandButton1_Click()
+
     On Error GoTo GestionErreur
     
     Dim FSO As Object
@@ -361,10 +368,14 @@ Private Sub CommandButton1_Click()
         Exit Sub
     End If
     
-    fileName = lstFichiers.Value
+     fileName = lstFichiers.Value
+ 
     structType = GetDomainStructure(cmbDomaine.Value)
     
-    ' Déterminer statut final
+    ' ==============================
+    ' 2?? Déterminer statut final
+    ' ==============================
+    
     If optTraites.Value = True Then
         statutFinal = "TRAITES"
     ElseIf optNonConforme.Value = True Then
@@ -373,13 +384,15 @@ Private Sub CommandButton1_Click()
         MsgBox "Veuillez sélectionner TRAITES ou NON CONFORME."
         Exit Sub
     End If
-    
+         
     If statutFinal = "NON CONFORME" And txtCommentaire.Value = "" Then
         MsgBox "AJOUTE UN COMMENTAIRE"
         Exit Sub
-    End If
+    Else
+    ' ==============================
+    ' 1?? Sélection dossier source
+    ' ==============================
     
-    ' Sélection dossier source (le dossier à déplacer)
     With Application.FileDialog(msoFileDialogFolderPicker)
         .Title = "Sélectionner le dossier à déplacer"
         If .Show <> -1 Then Exit Sub
@@ -389,57 +402,59 @@ Private Sub CommandButton1_Click()
     If Right(dossierSource, 1) = "\" Then
         dossierSource = Left(dossierSource, Len(dossierSource) - 1)
     End If
-    
-    ' Construction du chemin source (dossier contenant le fichier ?)
-    ' Ici, on suppose que le dossier à déplacer est celui du fichier sélectionné
-    ' Cette partie est floue, mais on garde la logique existante en l'adaptant
-    If cmbDomaine.Value = "DIRCO" Then
-        srcPath = ROOT_PATH & "DIRCO\" & cmbSousCategorie.Value & "\" & _
-                  cmbSousDomaine.Value & "\" & "EN COURS"
-    Else
+
+    '---------------------------------------------------------
+    '---------------------------------------------------------
         Select Case cmbDomaine.Value
-            Case "DIRCO", "ACM"
-                srcPath = ROOT_PATH & cmbDomaine & "\" & _
-                          "EN COURS" & "\" & cmbSousDomaine
-            Case "CONTRATHEQUE"
-                srcPath = ROOT_PATH & cmbDomaine & "\" & cmbSousDomaine.Value & "\" & "EN COURS"
-            Case Else
-                srcPath = ROOT_PATH & cmbDomaine & "\" & "EN COURS"
-        End Select
-    End If
+        
+        Case "DIRCO", "ACM"
+            srcPath = ROOT_PATH & "\" & cmbDomaine & "\" & _
+                    "\" & "EN COURS" & "\" & cmbSousDomaine
+            
+        Case "CONTRATHEQUE"
+                srcPath = ROOT_PATH & "\" & cmbDomaine & "\" & cmbSousDomaine.Value & "\" & "EN COURS"
+        Case Else
+            srcPath = ROOT_PATH & "\" & cmbDomaine & "\" & "EN COURS"
+    End Select
+    
     srcPath = srcPath & "\" & fileName
+    MsgBox srcPath
+    ' ==============================
+    ' 3?? Construire destination
+    ' ==============================
     
-    ' Construction destination
-    If cmbDomaine.Value = "DIRCO" Then
-        dstPath = ROOT_PATH & "DIRCO\" & cmbSousCategorie.Value & "\" & _
+    Select Case cmbDomaine.Value
+
+    Case "DIRCO", "ACM"
+        dstPath = ROOT_PATH & "\" & cmbDomaine.Value & "\" & _
+                  statutFinal & "\" & cmbSousDomaine.Value
+                  
+    Case "CONTRATHEQUE"
+        dstPath = ROOT_PATH & "\" & cmbDomaine.Value & "\" & _
                   cmbSousDomaine.Value & "\" & statutFinal
-    Else
-        Select Case cmbDomaine.Value
-            Case "DIRCO", "ACM"
-                dstPath = ROOT_PATH & cmbDomaine.Value & "\" & _
-                          statutFinal & "\" & cmbSousDomaine.Value
-            Case "CONTRATHEQUE"
-                dstPath = ROOT_PATH & cmbDomaine.Value & "\" & _
-                          cmbSousDomaine.Value & "\" & statutFinal
-            Case Else
-                dstPath = ROOT_PATH & cmbDomaine.Value & "\" & statutFinal
-        End Select
-    End If
-    
-    ' Chemin historique (copie de sauvegarde)
+        
+    Case Else
+        dstPath = ROOT_PATH & "\" & cmbDomaine.Value & "\" & statutFinal
+
+    End Select
+    MsgBox dstPath
     Dim histoPath As String
     histoPath = "\\uf11pu01\ACCESSIBILITÉ_CONSEILLERS\ACCESSIBILITE\Historique" & "\" & fileName
     
-    ' Journaliser avant déplacement
+    
+    '==============================
+    '==============================
+    
+    ' Journaliser
     LogAction "Déplacement", fileName, cmbDomaine.Value, cmbSousDomaine.Value, txtAgent, txtCommentaire.Value, _
               cmbStatutSource & " ? " & statutFinal
-    
-    ' Mettre à jour la feuille de traçabilité (pairing des lignes)
+
     Dim wsLog As Worksheet
     Dim wsTrace As Worksheet
     Dim lastRow As Long
     Dim i As Long
     Dim outputRow As Long
+    
     Dim agentName As String
     Dim Comment As String
     Dim Domaine As String
@@ -453,14 +468,17 @@ Private Sub CommandButton1_Click()
     Set wsLog = ThisWorkbook.Sheets("LOG_ACTIONS")
     Set wsTrace = ThisWorkbook.Sheets("SHEET_TRACE_NAME")
     
-    ' Clear old trace (except headers)
+    ' Clear old data (except headers)
     wsTrace.Rows("2:" & wsTrace.Rows.Count).ClearContents
     
     lastRow = wsLog.Cells(wsLog.Rows.Count, "A").End(xlUp).row
     outputRow = 2
-    i = 2
+    
+    i = 2 ' Start after header
     
     Do While i <= lastRow
+        
+        ' First row (A TRAITER ? EN COURS)
         fileName = wsLog.Cells(i, 3).Value
         Domaine = wsLog.Cells(i, 4).Value
         SousDomaine = wsLog.Cells(i, 7).Value
@@ -468,9 +486,13 @@ Private Sub CommandButton1_Click()
         startDate = wsLog.Cells(i, 1).Value
         Comment = wsLog.Cells(i + 1, 8).Value
         
+        ' Second row (EN COURS ? TRAITES / NON CONFORME)
         If i + 1 <= lastRow Then
+            
             endDate = wsLog.Cells(i + 1, 1).Value
             details = wsLog.Cells(i + 1, 6).Value
+            
+            ' Extract last word after "?"
             If InStr(details, "?") > 0 Then
                 parts = Split(details, "?")
                 status = Trim(parts(UBound(parts)))
@@ -478,6 +500,7 @@ Private Sub CommandButton1_Click()
                 status = details
             End If
             
+            ' Write to SHEET_TRACE_NAME
             wsTrace.Cells(outputRow, 1).Value = fileName
             wsTrace.Cells(outputRow, 2).Value = Domaine
             wsTrace.Cells(outputRow, 3).Value = SousDomaine
@@ -488,49 +511,66 @@ Private Sub CommandButton1_Click()
             wsTrace.Cells(outputRow, 8).Value = wsTrace.Cells(outputRow, 6).Value - wsTrace.Cells(outputRow, 5).Value
             wsTrace.Cells(outputRow, 9).Value = Comment
             
+            
             outputRow = outputRow + 1
+            
         End If
         
-        i = i + 2
+        i = i + 2 ' Jump to next pair
+        
     Loop
     
-    MsgBox "Trace générée avec succès!", vbInformation
+    MsgBox "Trace generated successfully!", vbInformation
+
     
     ' Recharger
     LoadFichiers
     txtCommentaire.Value = ""
+    ' ==============================
+    ' 4?? Construction finale
+    ' ==============================
     
-    ' Déplacer le dossier
     nomDossier = FSO.GetFolder(dossierSource).Name
     destinationFinale = dstPath & "\" & nomDossier
-    
+    MsgBox destinationFinale
+    ' Vérifier si existe déjà
     If FSO.FolderExists(destinationFinale) Then
         MsgBox "Le dossier existe déjà à destination.", vbExclamation
         Exit Sub
     End If
     
-    ' Copier puis supprimer l'original
-    Name srcPath As histoPath   ' déplace le fichier dans historique
-    FSO.CopyFolder dossierSource, destinationFinale, True
+    ' ==============================
+    ' 5?? Copier puis supprimer
+    ' ==============================
+
+
+        Name srcPath As histoPath
+        FSO.CopyFolder dossierSource, destinationFinale, True
     
-    If FSO.FolderExists(destinationFinale) Then
-        FSO.DeleteFolder dossierSource, True
-        MsgBox "Dossier déplacé vers " & statutFinal, vbInformation
-    Else
-        MsgBox "Erreur lors de la copie.", vbCritical
+        If FSO.FolderExists(destinationFinale) Then
+            FSO.DeleteFolder dossierSource, True
+            MsgBox "Dossier déplacé vers " & statutFinal, vbInformation
+        Else
+            MsgBox "Erreur lors de la copie.", vbCritical
+        End If
+        Exit Sub
     End If
-    
-    Exit Sub
-    
 GestionErreur:
     MsgBox "Erreur : " & Err.Number & " - " & Err.Description, vbCritical
-End Sub
 
-' --------------------------------------------------------------
-' ************** PARTIE RECHERCHE (onglet 2) **************
-' --------------------------------------------------------------
+End Sub
+'=============================================================================================================================================
+
+
+
+
+
+
+'=============================================================================================================================================
+
 
 Private Sub cboRacine_Change()
+
     Dim cheminACM As String
     Dim dossier As Object
     Dim sousDossier As Object
@@ -539,31 +579,42 @@ Private Sub cboRacine_Change()
     
     Set FSO = CreateObject("Scripting.FileSystemObject")
     
+    ' ===== CAS ACM =====
     If cboRacine.Value = "ACM" Then
+        
         cheminACM = basePath & "ACM\NON CONFORME\"
+        
         If FSO.FolderExists(cheminACM) Then
+            
             Set dossier = FSO.GetFolder(cheminACM)
+            
+            ' Charger dynamiquement les types réels
             For Each sousDossier In dossier.subFolders
                 cboSousDossier.AddItem sousDossier.Name
             Next sousDossier
+            
         End If
+        
+    ' ===== AUTRES CAS =====
     ElseIf cboRacine.Value = "DIRCO" Then
-        ' Pour DIRCO, on ajoute CM et CIC comme sous-dossiers
-        cboSousDossier.AddItem "CM"
-        cboSousDossier.AddItem "CIC"
-        ' On pourra ajouter un troisième niveau plus tard si nécessaire
+        cboSousDossier.AddItem "FICHES CLIENTS"
+        
     ElseIf cboRacine.Value = "CONTRATHEQUE" Then
         cboSousDossier.AddItem "CONDITIONS GENERALES"
         cboSousDossier.AddItem "Conventions"
         cboSousDossier.AddItem "Document d’Information Tarifaire"
         cboSousDossier.AddItem "Granties"
         cboSousDossier.AddItem "Politique de Protection"
+        
     Else
         cboSousDossier.AddItem "(Aucun)"
     End If
+
 End Sub
 
+
 Private Sub cmdRechercher_Click()
+
     Dim cheminFinal As String
     Dim dossier As Object
     Dim d As Object
@@ -576,113 +627,138 @@ Private Sub cmdRechercher_Click()
     
     Set FSO = CreateObject("Scripting.FileSystemObject")
     
+    ' ===== CAS ACM =====
     If cboRacine.Value = "ACM" Then
+        
         If cboSousDossier.Value = "" Then
             MsgBox "Sélectionnez un type ACM"
             Exit Sub
         End If
+        
         cheminFinal = basePath & "ACM\NON CONFORME\" & cboSousDossier.Value
+        
         If Not FSO.FolderExists(cheminFinal) Then
             MsgBox "Dossier introuvable"
             Exit Sub
         End If
+        
         Set dossier = FSO.GetFolder(cheminFinal)
+        
         lstResultats.Clear
+        
+        ' Afficher les dossiers contenus dans le type choisi
         For Each d In dossier.subFolders
             lstResultats.AddItem d.Name
             lstResultats.List(lstResultats.ListCount - 1, 1) = d.path
         Next d
+        
     Else
-        ' Pour DIRCO, nous devons parcourir les sous-catégories
-        If cboRacine.Value = "DIRCO" Then
-            If cboSousDossier.Value = "" Then
-                MsgBox "Sélectionnez une catégorie (CM ou CIC)"
-                Exit Sub
-            End If
-            ' On suppose que les dossiers NON CONFORME se trouvent directement sous
-            ' ...\CM\FICHES CLIENTS\NON CONFORME et ...\CIC\FICHES CLIENTS\NON CONFORME
-            ' On va parcourir tous les dossiers "NON CONFORME" sous la catégorie choisie.
-            cheminFinal = basePath & "DIRCO\" & cboSousDossier.Value
-            If Not FSO.FolderExists(cheminFinal) Then
-                MsgBox "Dossier introuvable"
-                Exit Sub
-            End If
-            Set dossier = FSO.GetFolder(cheminFinal)
-            ' On appelle une fonction de recherche récursive
-            Call RechercherNonConforme(dossier)
-        Else
-            ' Autres racines : recherche simple
-            cheminFinal = basePath & cboRacine.Value
-            If cboSousDossier.Value <> "" And cboSousDossier.Value <> "(Aucun)" Then
-                cheminFinal = cheminFinal & "\" & cboSousDossier.Value
-            End If
-            If Not FSO.FolderExists(cheminFinal) Then
-                MsgBox "Dossier introuvable"
-                Exit Sub
-            End If
-            Set dossier = FSO.GetFolder(cheminFinal)
-            Call RechercherNonConforme(dossier)
+    
+        ' ===== AUTRES RACINES =====
+        cheminFinal = basePath & cboRacine.Value
+        
+        If cboSousDossier.Value <> "" And cboSousDossier.Value <> "(Aucun)" Then
+            cheminFinal = cheminFinal & "\" & cboSousDossier.Value
         End If
+        
+        If Not FSO.FolderExists(cheminFinal) Then
+            MsgBox "Dossier introuvable"
+            Exit Sub
+        End If
+        
+        lstResultats.Clear
+        
+        Set dossier = FSO.GetFolder(cheminFinal)
+        
+        Call RechercherNonConforme(dossier)
+        
     End If
     
     If lstResultats.ListCount = 0 Then
         MsgBox "Aucun dossier trouvé"
     End If
+
 End Sub
 
+
 Private Sub RechercherNonConforme(ByVal dossier As Object)
+
     Dim sousDossier As Object
     Dim d As Object
     
     For Each sousDossier In dossier.subFolders
+        
         If UCase(sousDossier.Name) = "NON CONFORME" Then
+            
             For Each d In sousDossier.subFolders
                 lstResultats.AddItem d.Name
                 lstResultats.List(lstResultats.ListCount - 1, 1) = d.path
             Next d
+            
         End If
+        
         Call RechercherNonConforme(sousDossier)
+        
     Next sousDossier
+
 End Sub
 
+
 Private Sub lstResultats_DblClick(ByVal Cancel As MSForms.ReturnBoolean)
+
     If lstResultats.ListIndex <> -1 Then
         Shell "explorer.exe """ & lstResultats.List(lstResultats.ListIndex, 1) & """", vbNormalFocus
     End If
+
 End Sub
 
+
 Private Sub ParcourirDossier(ByVal dossier As Object)
-    ' Cette procédure semble redondante avec RechercherNonConforme
-    ' Nous la conservons pour compatibilité mais elle n'est pas utilisée dans le code actuel
+
     Dim sousDossier As Object
     Dim categorie As Object
     Dim dossierFinal As Object
     Dim racineSelectionnee As String
     
     For Each sousDossier In dossier.subFolders
+        
         If UCase(sousDossier.Name) = "NON CONFORME" Then
+            
+            ' CAS SPECIAL ACM
             If UCase(racineSelectionnee) = "ACM" Then
+                
                 For Each categorie In sousDossier.subFolders
                     For Each dossierFinal In categorie.subFolders
+                        
                         lstResultats.AddItem dossierFinal.Name
                         lstResultats.List(lstResultats.ListCount - 1, 1) = dossierFinal.path
+                        
                     Next dossierFinal
                 Next categorie
+            
+            ' TOUS LES AUTRES DOSSIERS
             Else
+                
                 For Each dossierFinal In sousDossier.subFolders
+                    
                     lstResultats.AddItem dossierFinal.Name
                     lstResultats.List(lstResultats.ListCount - 1, 1) = dossierFinal.path
+                    
                 Next dossierFinal
+                
             End If
+            
         End If
+        
         Call ParcourirDossier(sousDossier)
+        
     Next sousDossier
+
 End Sub
 
-' --------------------------------------------------------------
-' Bouton pour déplacer un dossier de NON CONFORME vers TRAITES (onglet 2)
-' --------------------------------------------------------------
+
 Private Sub CommandButton2_Click()
+
     On Error GoTo GestionErreur
     
     Dim FSO As Object
@@ -693,6 +769,7 @@ Private Sub CommandButton2_Click()
     Dim nomDossier As String
     Dim destinationFinale As String
     Dim statutFinal As String
+    Dim structType As StructureType
     Dim srcPath As String
     Dim fileName As String
     
@@ -703,6 +780,7 @@ Private Sub CommandButton2_Click()
     End If
     
     fileName = lstResultats.Value
+    structType = GetDomainStructure(cmbDomaine.Value)
     
     ' Sélection dossier source
     With Application.FileDialog(msoFileDialogFolderPicker)
@@ -711,35 +789,47 @@ Private Sub CommandButton2_Click()
         dossierSource = .SelectedItems(1)
     End With
     
+    ' Supprimer \ final
     If Right(dossierSource, 1) = "\" Then
         dossierSource = Left(dossierSource, Len(dossierSource) - 1)
     End If
     
-    ' Construction source : dossier NON CONFORME du fichier sélectionné
-    ' Ici, on suppose que le dossier source est celui du fichier sélectionné
-    If cboRacine.Value = "DIRCO" Then
-        srcPath = basePath & "DIRCO\" & cboSousDossier.Value & "\FICHES CLIENTS\NON CONFORME\" & fileName
-        ' Pour DIRCO, destination = ...\CM\FICHES CLIENTS\TRAITES\
-        dstPath = basePath & "DIRCO\" & cboSousDossier.Value & "\FICHES CLIENTS\TRAITES"
-    ElseIf cboRacine.Value = "ACM" Then
-        srcPath = basePath & "ACM\NON CONFORME\" & cboSousDossier.Value & "\" & fileName
-        dstPath = basePath & "ACM\TRAITES\" & cboSousDossier.Value
-    ElseIf cboRacine.Value = "CONTRATHEQUE" Then
-        srcPath = basePath & "CONTRATHEQUE\" & cboSousDossier.Value & "\NON CONFORME\" & fileName
-        dstPath = basePath & "CONTRATHEQUE\" & cboSousDossier.Value & "\TRAITES"
-    Else
-        ' Autres domaines
-        srcPath = basePath & cboRacine.Value & "\NON CONFORME\" & fileName
-        dstPath = basePath & cboRacine.Value & "\TRAITES"
-    End If
+    ' Construction source
+    Select Case cboRacine.Value
     
-    ' Destination finale
+    Case "DIRCO", "CONTRATHEQUE"
+        srcPath = ROOT_PATH & "\" & cboRacine.Value & "\" & _
+                   cboSousDossier.Value & "\" & "NON CONFORME"
+    Case "ACM"
+        srcPath = ROOT_PATH & "\" & cboRacine.Value & "\" & _
+                  "NON CONFORME" & "\" & cboSousDossier.Value
+    Case Else
+        srcPath = ROOT_PATH & "\" & cboRacine.Value & "\" & "NON CONFORME"
+    End Select
+    
+    srcPath = srcPath & "\" & fileName
+    
+    ' Construction destination
+    Select Case cboRacine.Value
+    
+    Case "DIRCO", "CONTRATHEQUE"
+        dstPath = ROOT_PATH & "\" & cboRacine.Value & "\" & _
+                   cboSousDossier.Value & "\" & "TRAITES"
+    Case "ACM"
+        dstPath = ROOT_PATH & "\" & cboRacine.Value & "\" & _
+                  "TRAITES" & "\" & cboSousDossier.Value
+    Case Else
+        dstPath = ROOT_PATH & "\" & cboRacine.Value & "\" & "TRAITES"
+    End Select
+    MsgBox dstPath
+            
     nomDossier = FSO.GetFolder(dossierSource).Name
     destinationFinale = dstPath & "\" & nomDossier
     
-    ' Chemin historique (optionnel)
-    Dim histoPath As String
+    
+        Dim histoPath As String
     histoPath = "\\uf11pu01\ACCESSIBILITÉ_CONSEILLERS\ACCESSIBILITE\Historique" & "\" & fileName
+    
     
     ' Vérifier si existe déjà
     If FSO.FolderExists(destinationFinale) Then
@@ -747,7 +837,7 @@ Private Sub CommandButton2_Click()
         Exit Sub
     End If
     
-    ' Déplacer : copier puis supprimer l'original
+    ' Copier
     FSO.CopyFolder dossierSource, destinationFinale, True
     FSO.DeleteFolder srcPath, True
     
@@ -758,129 +848,14 @@ Private Sub CommandButton2_Click()
         MsgBox "Erreur lors de la copie.", vbCritical
     End If
     
-    ' Journaliser
-    LogAction "Déplacement", fileName, txtAgent, "de NON CONFORME à TRAITES"
+        ' Journaliser
+    LoAction "Déplacement", fileName, txtAgent, _
+              "de NON CONFORME à TRAITES"
     
     Exit Sub
-    
+
 GestionErreur:
     MsgBox "Erreur - " & Err.Number & " - " & Err.Description, vbCritical
+
 End Sub
 
-' --------------------------------------------------------------
-' Fonctions utilitaires (à définir ailleurs ou dans un module)
-' --------------------------------------------------------------
-Private Function GetSubFolders(path As String) As Collection
-    ' Retourne une collection des noms des sous-dossiers de path
-    Dim col As New Collection
-    Dim fso As Object
-    Dim folder As Object
-    Dim subfolder As Object
-    
-    Set fso = CreateObject("Scripting.FileSystemObject")
-    If fso.FolderExists(path) Then
-        Set folder = fso.GetFolder(path)
-        For Each subfolder In folder.subFolders
-            col.Add subfolder.Name
-        Next
-    End If
-    Set GetSubFolders = col
-End Function
-
-Private Function GetNonStatutFolders(path As String) As Collection
-    ' Retourne les sous-dossiers qui ne sont pas des statuts (A TRAITER, EN COURS, TRAITES, NON CONFORME)
-    Dim col As New Collection
-    Dim fso As Object
-    Dim folder As Object
-    Dim subfolder As Object
-    
-    Set fso = CreateObject("Scripting.FileSystemObject")
-    If fso.FolderExists(path) Then
-        Set folder = fso.GetFolder(path)
-        For Each subfolder In folder.subFolders
-            If UCase(subfolder.Name) <> "A TRAITER" And _
-               UCase(subfolder.Name) <> "EN COURS" And _
-               UCase(subfolder.Name) <> "TRAITES" And _
-               UCase(subfolder.Name) <> "NON CONFORME" Then
-                col.Add subfolder.Name
-            End If
-        Next
-    End If
-    Set GetNonStatutFolders = col
-End Function
-
-Private Function GetDomainStructure(domain As String) As StructureType
-    ' Détermine le type de structure pour le domaine
-    If domain = "ACM" Then
-        GetDomainStructure = THREE_LEVEL
-    ElseIf domain = "DIRCO" Or domain = "CONTRATHEQUE" Then
-        GetDomainStructure = Complex
-    Else
-        GetDomainStructure = SIMPLE
-    End If
-End Function
-
-Private Function FolderExists(path As String) As Boolean
-    Dim fso As Object
-    Set fso = CreateObject("Scripting.FileSystemObject")
-    FolderExists = fso.FolderExists(path)
-End Function
-
-Private Sub LoadFilesToList(lst As MSForms.ListBox, path As String)
-    Dim fso As Object
-    Dim folder As Object
-    Dim file As Object
-    
-    lst.Clear
-    Set fso = CreateObject("Scripting.FileSystemObject")
-    If fso.FolderExists(path) Then
-        Set folder = fso.GetFolder(path)
-        For Each file In folder.Files
-            lst.AddItem file.Name
-        Next
-    End If
-End Sub
-
-Private Sub CreateFolderIfNotExists(path As String)
-    Dim fso As Object
-    Set fso = CreateObject("Scripting.FileSystemObject")
-    If Not fso.FolderExists(path) Then
-        fso.CreateFolder path
-    End If
-End Sub
-
-Private Function GetTraceRow(ws As Worksheet, fileName As String) As Long
-    ' Placeholder : retourne la ligne où se trouve le nom de fichier dans la feuille de traçabilité
-    Dim rng As Range
-    Set rng = ws.Columns(1).Find(What:=fileName, LookAt:=xlWhole)
-    If Not rng Is Nothing Then
-        GetTraceRow = rng.Row
-    Else
-        GetTraceRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).row + 1
-    End If
-End Function
-
-Private Sub LogAction(action As String, fileName As String, domaine As String, sousDomaine As String, agent As String, commentaire As String, details As String)
-    ' Ajoute une ligne dans la feuille LOG_ACTIONS
-    Dim ws As Worksheet
-    Dim lastRow As Long
-    
-    Set ws = ThisWorkbook.Sheets("LOG_ACTIONS")
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).row + 1
-    
-    ws.Cells(lastRow, 1).Value = Now
-    ws.Cells(lastRow, 2).Value = action
-    ws.Cells(lastRow, 3).Value = fileName
-    ws.Cells(lastRow, 4).Value = domaine
-    ws.Cells(lastRow, 5).Value = agent
-    ws.Cells(lastRow, 6).Value = details
-    ws.Cells(lastRow, 7).Value = sousDomaine
-    ws.Cells(lastRow, 8).Value = commentaire
-End Sub
-
-' Enumération des types de structure
-Public Enum StructureType
-    SIMPLE = 1
-    Complex = 2
-    THREE_LEVEL = 3
-End Enum
