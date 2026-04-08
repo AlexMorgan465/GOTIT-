@@ -9,6 +9,7 @@ Private Enum StructureType
     SIMPLE = 0
     Complex = 1
     THREE_LEVEL = 2
+    DIRCO_SPECIAL = 3      ' DIRCO has "FICHES CLIENTS" level
 End Enum
 
 ' --- Form-level variables ---
@@ -79,13 +80,14 @@ Private Sub LoadDomaines()
 End Sub
 
 ' ============================================================================
-' Domain & subdomain logic
+' Domain structure logic
 ' ============================================================================
 
 Private Function GetDomainStructure(domain As String) As StructureType
     Select Case domain
         Case "ACM":                 GetDomainStructure = THREE_LEVEL
-        Case "DIRCO", "CONTRATHEQUE": GetDomainStructure = Complex
+        Case "DIRCO":               GetDomainStructure = DIRCO_SPECIAL
+        Case "CONTRATHEQUE":        GetDomainStructure = Complex
         Case Else:                  GetDomainStructure = SIMPLE
     End Select
 End Function
@@ -168,7 +170,7 @@ Private Sub cmbDomaine_Change()
             cmbSousDomaine.AddItem "[PAS DE SOUS-DOMAINE]"
             cmbSousDomaine.Enabled = False
             
-        Case Complex
+        Case Complex   ' CONTRATHEQUE
             Set col = GetNonStatutFolders(ROOT_PATH & "\" & cmbDomaine.Value)
             If col.Count > 0 Then
                 For Each item In col
@@ -187,6 +189,18 @@ Private Sub cmbDomaine_Change()
                 Next item
             Else
                 cmbSousDomaine.AddItem "[AUCUN TYPE]"
+            End If
+            cmbSousDomaine.Enabled = True
+            
+        Case DIRCO_SPECIAL
+            ' For DIRCO, we load subdomains from the root DIRCO folder (excluding status folders)
+            Set col = GetNonStatutFolders(ROOT_PATH & "\" & cmbDomaine.Value)
+            If col.Count > 0 Then
+                For Each item In col
+                    cmbSousDomaine.AddItem item
+                Next item
+            Else
+                cmbSousDomaine.AddItem "[AUCUN SOUS-DOMAINE]"
             End If
             cmbSousDomaine.Enabled = True
     End Select
@@ -216,13 +230,18 @@ Private Sub LoadFichiers()
         Case SIMPLE
             path = ROOT_PATH & "\" & cmbDomaine.Value & "\" & cmbStatutSource.Value
             
-        Case Complex
+        Case Complex   ' CONTRATHEQUE
             If cmbSousDomaine.Value = "" Or cmbSousDomaine.Value Like "[*]*" Then Exit Sub
             path = ROOT_PATH & "\" & cmbDomaine.Value & "\" & cmbSousDomaine.Value & "\" & cmbStatutSource.Value
             
         Case THREE_LEVEL   ' ACM
             If cmbSousDomaine.Value = "" Or cmbSousDomaine.Value Like "[*]*" Then Exit Sub
             path = ROOT_PATH & "\" & cmbDomaine.Value & "\" & cmbStatutSource.Value & "\" & cmbSousDomaine.Value
+            
+        Case DIRCO_SPECIAL
+            If cmbSousDomaine.Value = "" Or cmbSousDomaine.Value Like "[*]*" Then Exit Sub
+            ' DIRCO path: Domain > SubDomain > FICHES CLIENTS > Status
+            path = ROOT_PATH & "\" & cmbDomaine.Value & "\" & cmbSousDomaine.Value & "\FICHES CLIENTS\" & cmbStatutSource.Value
     End Select
     
     If FolderExists(path) Then
@@ -253,7 +272,7 @@ Private Sub cmdDeplacer_Click()
     fileName = lstFichiers.Value
     structType = GetDomainStructure(cmbDomaine.Value)
     
-    ' --- Source path ---
+    ' --- Source path (from current status, which is "A TRAITER") ---
     Select Case structType
         Case SIMPLE
             srcPath = ROOT_PATH & "\" & cmbDomaine.Value & "\" & cmbStatutSource.Value
@@ -261,6 +280,8 @@ Private Sub cmdDeplacer_Click()
             srcPath = ROOT_PATH & "\" & cmbDomaine.Value & "\" & cmbSousDomaine.Value & "\" & cmbStatutSource.Value
         Case THREE_LEVEL
             srcPath = ROOT_PATH & "\" & cmbDomaine.Value & "\" & cmbStatutSource.Value & "\" & cmbSousDomaine.Value
+        Case DIRCO_SPECIAL
+            srcPath = ROOT_PATH & "\" & cmbDomaine.Value & "\" & cmbSousDomaine.Value & "\FICHES CLIENTS\" & cmbStatutSource.Value
     End Select
     srcPath = srcPath & "\" & fileName
     
@@ -272,6 +293,8 @@ Private Sub cmdDeplacer_Click()
             dstPath = ROOT_PATH & "\" & cmbDomaine.Value & "\" & cmbSousDomaine.Value & "\EN COURS"
         Case THREE_LEVEL
             dstPath = ROOT_PATH & "\" & cmbDomaine.Value & "\EN COURS\" & cmbSousDomaine.Value
+        Case DIRCO_SPECIAL
+            dstPath = ROOT_PATH & "\" & cmbDomaine.Value & "\" & cmbSousDomaine.Value & "\FICHES CLIENTS\EN COURS"
     End Select
     CreateFolderIfNotExists dstPath
     dstPath = dstPath & "\" & fileName
@@ -336,6 +359,8 @@ Private Sub CommandButton1_Click()
             srcPath = ROOT_PATH & "\" & cmbDomaine.Value & "\" & cmbSousDomaine.Value & "\EN COURS"
         Case THREE_LEVEL
             srcPath = ROOT_PATH & "\" & cmbDomaine.Value & "\EN COURS\" & cmbSousDomaine.Value
+        Case DIRCO_SPECIAL
+            srcPath = ROOT_PATH & "\" & cmbDomaine.Value & "\" & cmbSousDomaine.Value & "\FICHES CLIENTS\EN COURS"
     End Select
     srcPath = srcPath & "\" & fileName
     
@@ -347,6 +372,8 @@ Private Sub CommandButton1_Click()
             dstPath = ROOT_PATH & "\" & cmbDomaine.Value & "\" & cmbSousDomaine.Value & "\" & finalStatus
         Case THREE_LEVEL
             dstPath = ROOT_PATH & "\" & cmbDomaine.Value & "\" & finalStatus & "\" & cmbSousDomaine.Value
+        Case DIRCO_SPECIAL
+            dstPath = ROOT_PATH & "\" & cmbDomaine.Value & "\" & cmbSousDomaine.Value & "\FICHES CLIENTS\" & finalStatus
     End Select
     CreateFolderIfNotExists dstPath
     dstPath = dstPath & "\" & fileName
