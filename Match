@@ -1,7 +1,9 @@
 Sub splitdata()
+
     Dim wssource As Worksheet
     Dim wstarget As Worksheet
     Dim i As Long
+    Dim lastRow As Long
     Dim monthyear As String
     Dim dict As Object
     Dim nom As String
@@ -9,7 +11,14 @@ Sub splitdata()
     Set wssource = ThisWorkbook.Worksheets("OCAOCR")
     Set dict = CreateObject("Scripting.Dictionary")
     
-    For i = 2 To wssource.Cells(wssource.Rows.Count, "B").End(xlUp).Row
+    ' 👉 On fige la dernière ligne dès le début
+    lastRow = wssource.Cells(wssource.Rows.Count, "B").End(xlUp).Row
+    
+    For i = 2 To lastRow
+        
+        ' 👉 Sécurité : ignorer les lignes vides après suppression
+        If IsEmpty(wssource.Cells(i, "B")) Then GoTo suite
+        
         monthyear = Format(wssource.Cells(i, "B").Value, "mm/yyyy")
         
         If monthyear = "01/2026" Then
@@ -38,11 +47,23 @@ Sub splitdata()
             monthyear = "Décembre"
         End If
         
+        ' 👉 Sécurisation de la feuille (évite erreur 9 en fin de boucle)
+        On Error Resume Next
         Set wstarget = ThisWorkbook.Worksheets(monthyear)
-
-        wssource.Rows(i).Copy wstarget.Cells(wstarget.Rows.Count, "A").End(xlUp).Offset(1, 0)
-        wssource.Rows(i).Delete
-        i = i - 1
+        On Error GoTo 0
+        
+        If Not wstarget Is Nothing Then
+            wssource.Rows(i).Copy wstarget.Cells(wstarget.Rows.Count, "A").End(xlUp).Offset(1, 0)
+            wssource.Rows(i).Delete
+            i = i - 1
+            lastRow = lastRow - 1
+        End If
+        
+suite:
+        Set wstarget = Nothing
+        
     Next i
+
     Set dict = Nothing
+
 End Sub
