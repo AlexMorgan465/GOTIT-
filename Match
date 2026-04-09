@@ -1,68 +1,1092 @@
-Sub splitdata()
+Option Compare Text
 
-    Dim wssource As Worksheet
-    Dim wstarget As Worksheet
-    Dim i As Long
-    Dim lastRow As Long
-    Dim monthyear As String
-    Dim dict As Object
-    Dim nom As String
-    
-    Set wssource = ThisWorkbook.Worksheets("temp")
-    Set dict = CreateObject("Scripting.Dictionary")
-    
-    lastRow = wssource.Cells(wssource.Rows.Count, "C").End(xlUp).Row
-    
-    For i = 2 To lastRow
-        
-        If IsEmpty(wssource.Cells(i, "C")) Then GoTo suite
-        
-        monthyear = Format(wssource.Cells(i, "C").Value, "mm/yyyy")
-        
-        If monthyear = "01/2026" Then
-            monthyear = "Janvier"
-        ElseIf monthyear = "02/2026" Then 
-            monthyear = "Février"
-        ElseIf monthyear = "03/2026" Then
-            monthyear = "Mars"
-        ElseIf monthyear = "04/2026" Then
-            monthyear = "Avril"
-        ElseIf monthyear = "05/2026" Then
-            monthyear = "Mai"
-        ElseIf monthyear = "06/2026" Then
-            monthyear = "Juin"
-        ElseIf monthyear = "07/2026" Then
-            monthyear = "Juillet"
-        ElseIf monthyear = "08/2026" Then
-            monthyear = "Aout"
-        ElseIf monthyear = "09/2026" Then
-            monthyear = "Septembre"
-        ElseIf monthyear = "10/2026" Then
-            monthyear = "Octobre"
-        ElseIf monthyear = "11/2026" Then
-            monthyear = "Novembre"
-        ElseIf monthyear = "12/2026" Then
-            monthyear = "Décembre"
-        End If
-        
-        On Error Resume Next
-        Set wstarget = ThisWorkbook.Worksheets(monthyear)
-        On Error GoTo 0
-        
-        If Not wstarget Is Nothing Then
-            wssource.Rows(i).Copy wstarget.Cells(wstarget.Rows.Count, "A").End(xlUp).Offset(1, 0)
-            wssource.Rows(i).Delete
-            i = i - 1
-            lastRow = lastRow - 1
-        End If
-        
-suite:
-        Set wstarget = Nothing
-        
-    Next i
 
-    Set dict = Nothing
-    
-    MsgBox "DONE!"
+
+Dim ligneSel As Integer
+Private Sub activ_Change()
+Dim index As Integer
+Dim sh As Worksheet
+
+Dim a As Integer
+Dim g As Integer
+index = Me.activ.ListIndex
+Me.produitt.Clear
+Me.Décisionn.Clear
+Select Case index
+Case Is = 0
+With Me.produitt
+.AddItem "CLA"
+.AddItem "CSA CDISCOUNT"
+.AddItem "PPR"
+.AddItem "AVENANT"
+.AddItem "Cartes Directes"
+.AddItem "CCL CDISCOUNT"
+.AddItem "Lydia/BANKIN"
+.AddItem "MC DC CASINO"
+.AddItem "PPC"
+
+
+End With
+
+Case Is = 1
+With Me.produitt
+.AddItem "CCL SFR"
+.AddItem "CCL/12/24/36"
+.AddItem "Live Carte"
+.AddItem "Live CCL"
+.AddItem "Live CDP"
+.AddItem "TRADE In"
+
+
+End With
+
+
+End Select
 
 End Sub
+Private Sub injecter_Click()
+
+
+Dim sh1 As Worksheet
+Dim sh2 As Worksheet
+Dim sh5 As Worksheet
+
+Dim fileNameCSV As String
+
+Set sh1 = ThisWorkbook.Sheets("Feuil1")
+Set sh5 = ThisWorkbook.Sheets("Feuil4")
+Set sh2 = ThisWorkbook.Sheets("Feuil2")
+Dim ligne As Integer: Dim test As Boolean
+Dim n As Integer
+Dim myWorksheet As Worksheet
+
+fileNameCSV = "\\Uf11pu01\EIDS_FLOA_OCTROI\BD DATA OCTROI Rabat26\" & Application.UserName & "_2026" & ".csv"
+Me.datee.Value = Format(Date, "dd/mm/yyyy")
+sh5.Unprotect "dps"
+ThisWorkbook.Unprotect "dps"
+colaborateur = Application.UserName
+sh1.Range("Q2").Value = Date
+
+ligne = NvLigne
+' Vérifier si le TextBox est vide
+    If Me.Dossierss.Value = "" Then
+        MsgBox "Veuillez renseigner le numéro du dossier.", vbExclamation
+        Exit Sub
+    End If
+    If Me.activ.Value = "" Then
+        MsgBox "Veuillez remplir l'activité .", vbExclamation
+        Exit Sub
+    End If
+    If Me.produitt.Value = "" Then
+        MsgBox "Veuillez sélectionner le produit.", vbExclamation
+        Exit Sub
+    End If
+    
+    If Me.Décisionn.Value = "" Then
+        MsgBox "Veuillez sélectionner la décision.", vbExclamation
+        Exit Sub
+      
+    End If
+If activ.ListIndex = -1 Then
+MsgBox "Vous devez faire une sélection dans la liste déroulante !", 16
+Exit Sub
+End If
+If activ = "" Then
+MsgBox "Vous devez faire une saisie dans le TextBox':", 16
+Exit Sub
+End If
+If produitt.ListIndex = -1 Then
+MsgBox "Vous devez faire une sélection dans la liste déroulante !", 16
+Exit Sub
+End If
+If produitt = "" Then
+MsgBox "Vous devez faire une saisie dans le TextBox':", 16
+Exit Sub
+End If
+If Décisionn.ListIndex = -1 Then
+MsgBox "Vous devez faire une sélection dans la liste déroulante !", 16
+Exit Sub
+End If
+If Décisionn = "" Then
+MsgBox "Vous devez faire une saisie dans le TextBox':", 16
+Exit Sub
+End If
+    
+    
+    
+Dim Collaborateur As String
+Dim date2  As String
+
+Dim Activité As String
+
+Dim produit As String
+
+Dim commentaire As String
+Dim Dossier As String
+Dim Décision As String
+
+Dim Flag As String
+Dim index As String
+Dim NbLignetxt As Long
+
+
+Dim intFic As Integer
+Dim strLigne As String
+Dim site As String
+
+ Feuil1.Range("x2").Value = "Validé"
+ sh1.Range("z1").Value = sh1.Range("M" & Rows.Count).End(xlUp).Row
+
+sh1.Range("z2").Value = sh1.Range("M" & Rows.Count).End(xlUp).Row
+If MsgBox("Validez-vous cette ligne ?", vbYesNo + vbQuestion) = vbYes Then
+
+
+
+Dim maxi As Long
+
+
+
+Flag = "Validé"
+   If Dir(fileNameCSV) <> "" Then
+ intFic = FreeFile
+Open "\\Uf11pu01\EIDS_FLOA_OCTROI\BD DATA OCTROI Rabat26\" & Application.UserName & "_2026" & ".csv" For Input As intFic
+While Not EOF(intFic)
+    Line Input #intFic, strLigne
+NbLignetxt = NbLignetxt + 1
+
+     
+Wend
+Close intFic
+
+
+If sh1.Range("z1").Value = 1 Then
+maxi = Application.WorksheetFunction.Max(NbLignetxt, 1)
+Else
+maxi = Application.WorksheetFunction.Max(NbLignetxt, sh1.Range("M" & Rows.Count).End(xlUp).Value)
+End If
+NbLignetxt = maxi
+
+
+        Else
+     
+           
+    sh1.Range("D" & ligne).Value = Me.colaborateur
+sh1.Range("E" & ligne).Value = Me.datee
+sh1.Range("F" & ligne).Value = Me.activ
+sh1.Range("G" & ligne).Value = Me.produitt
+sh1.Range("J" & ligne).Value = Me.commentaire
+sh1.Range("H" & ligne).Value = Me.Dossierss
+sh1.Range("I" & ligne).Value = Me.Décisionn
+sh1.Range("k" & ligne).Value = Format(Date, "dd-mm-yyyy") & "-" & Format(Time, "hh:mm:ss")
+
+sh1.Range("l" & ligne).Value = "Validé"
+
+sh1.Range("M" & ligne).Value = 1
+sh1.Range("N" & ligne).Value = "Rabat"
+
+Collaborateur = Me.colaborateur
+date2 = Me.datee
+Activité = Me.activ
+produit = Me.produitt
+commentaire = Me.commentaire
+Dossier = Me.Dossierss
+Décision = Me.Décisionn
+Flag = "validé"
+site = "Rabat"
+Dateetheuredesaisie = Format(Date, "dd-mm-yyyy") & "-" & Format(Time, "hh:mm:ss")
+          
+        
+    index = 1
+    
+        
+    Flag = "validé"
+    
+    Open fileNameCSV For Output As #1
+        Print #1, "Collaborateur;Date2;Activité; produit;Dossier;Décision;commentaire;Date et heure de saisie;Flag;index;site"
+       
+        Close #1
+    End If
+      
+       
+If sh1.Range("z1").Value = 1 Then
+maxi = Application.WorksheetFunction.Max(NbLignetxt, 1)
+Else
+maxi = Application.WorksheetFunction.Max(NbLignetxt - 1, sh1.Range("M" & Rows.Count).End(xlUp).Value)
+
+End If
+NbLignetxt = maxi
+
+
+  Feuil1.Range("y2").Value = NbLignetxt
+    index = NbLignetxt
+    
+        
+    sh1.Range("D" & ligne).Value = Me.colaborateur
+sh1.Range("E" & ligne).Value = Me.datee
+sh1.Range("F" & ligne).Value = Me.activ
+sh1.Range("G" & ligne).Value = Me.produitt
+sh1.Range("J" & ligne).Value = Me.commentaire
+sh1.Range("H" & ligne).Value = Me.Dossierss
+sh1.Range("I" & ligne).Value = Me.Décisionn
+sh1.Range("k" & ligne).Value = Format(Date, "dd-mm-yyyy") & "-" & Format(Time, "hh:mm:ss")
+
+sh1.Range("l" & ligne).Value = "Validé"
+
+sh1.Range("M" & ligne).Value = NbLignetxt + 1
+sh1.Range("N" & ligne).Value = "Rabat"
+
+Collaborateur = Me.colaborateur
+date2 = Me.datee
+Activité = Me.activ
+produit = Me.produitt
+commentaire = Me.commentaire
+Dossier = Me.Dossierss
+Décision = Me.Décisionn
+Flag = "validé"
+Dateetheuredesaisie = Format(Date, "dd-mm-yyyy") & "-" & Format(Time, "hh:mm:ss")
+site = "Rabat"
+         
+Feuil2.Range("q2").Value = Me.datee
+Feuil2.Range("q2").Value = CStr(Format(Date, "mm/dd/yy"))
+Feuil2.Range("R2").Value = "Validé"
+ Feuil1.Range("D1:N4653").AdvancedFilter Action:=xlFilterCopy, _
+        CriteriaRange:=Feuil2.Range("Q1:R2"), CopyToRange:=Feuil2.Range("D1:N1"), _
+        Unique:=False
+        
+        
+Call vider_form
+
+Application.ScreenUpdating = False
+
+Else
+
+Exit Sub
+Call vider_form
+
+End If
+Call vider_form
+
+ThisWorkbook.Protect "dps"
+sh5.Protect "dps"
+
+Me.tableau.ListIndex = 500
+Application.ScreenUpdating = False
+Application.DisplayAlerts = False
+
+Call TextBox14_Change
+Call TextBox17_Change
+
+
+Me.TextBox17 = ""
+Me.TextBox19 = ""
+Me.TextBox21 = ""
+
+
+sh5.Protect "dps"
+ThisWorkbook.Protect "dps"
+  ActiveWorkbook.Save
+
+End Sub
+
+Private Sub oneshot_Click()
+
+Dim sh1 As Worksheet
+Dim sh5 As Worksheet
+
+Dim fileNameCSV As String
+
+Set sh1 = ThisWorkbook.Sheets("Feuil1")
+Set sh5 = ThisWorkbook.Sheets("Feuil4")
+Dim ligne As Integer: Dim test As Boolean
+Dim n As Integer
+Dim myWorksheet As Worksheet
+
+fileNameCSV = "\\Uf11pu01\EIDS_FLOA_OCTROI\BD DATA OCTROI Rabat26\" & Application.UserName & "_2026" & ".csv"
+Me.datee.Value = Format(Date, "dd/mm/yyyy")
+sh5.Unprotect "dps"
+ThisWorkbook.Unprotect "dps"
+colaborateur = Application.UserName
+sh1.Range("Q2").Value = Date
+
+ Feuil1.Range("x2").Value = "Validé"
+    
+    
+Dim Collaborateur As String
+Dim date2  As String
+
+Dim Activité As String
+
+Dim produit As String
+
+Dim commentaire As String
+Dim Dossier As String
+Dim Décision As String
+
+Dim Flag As String
+Dim index As String
+Dim NbLignetxt As Long
+
+
+Dim intFic As Integer
+Dim strLigne As String
+Dim site As String
+
+Dim ligneainjecter As Integer
+ 
+
+sh1.Range("z1").Value = sh1.Range("M" & Rows.Count).End(xlUp).Row
+
+
+If MsgBox("Vous confirmez la sauvegarde sur le serveur?", vbYesNo + vbQuestion) = vbYes Then
+
+
+ If Dir(fileNameCSV) <> "" Then
+ 
+     
+
+Dim DerniereLigne As Long 'Index de la dernière ligne
+
+Feuil1.Activate
+
+
+        ' Le fichier CSV existe, ajouter les données à la fin du fichier
+    
+ 
+ Dim i, j, DernièreLigne, DernièreColonne, f As Worksheet
+Set f = Feuil1
+    DerniereLigne = f.Range("a1").SpecialCells(xlCellTypeLastCell).Row
+    DerniereColonne = f.Range("a1").SpecialCells(xlCellTypeLastCell).Column
+    
+    
+    Open fileNameCSV For Append As #1
+  
+    For i = 2 To DerniereLigne
+        For j = 4 To 15
+            Print #1, f.Cells(i, j).Formula + ";";
+            'pour séparateur ";"
+            'tu remplaces si tu souhaites que ton séparateur soit une virgule ou une tabulation
+        Next j
+        Print #1, f.Cells(i, j + 1).Value
+    Next i
+    
+    Close #1
+ 
+Application.ScreenUpdating = False
+Application.EnableEvents = False
+
+ Else
+    Exit Sub
+
+    End If
+       
+Feuil2.Range("q2").Value = Me.datee
+Feuil2.Range("q2").Value = CStr(Format(Date, "mm/dd/yy"))
+Feuil2.Range("R2").Value = "Validé"
+ Feuil1.Range("D1:N4653").AdvancedFilter Action:=xlFilterCopy, _
+        CriteriaRange:=Feuil2.Range("Q1:R2"), CopyToRange:=Feuil2.Range("D1:N1"), _
+        Unique:=False
+
+  
+Call Macro3
+
+
+Call vider_form
+
+
+Application.ScreenUpdating = False
+Application.EnableEvents = False
+Call copiesauvegarde
+Application.ScreenUpdating = False
+Application.EnableEvents = False
+sh5.Protect "dps"
+Else
+Exit Sub
+Call vider_form
+
+Call Macro3
+
+sh5.Protect "dps"
+
+
+End If
+Application.ScreenUpdating = False
+Application.DisplayAlerts = False
+
+sh5.Protect "dps"
+ThisWorkbook.Protect "dps"
+End Sub
+
+Private Sub produitt_Change()
+Dim index As Integer
+index1 = Me.produitt.ListIndex
+
+Me.Décisionn.Clear
+
+Me.Décisionn.AddItem "ACC VALIDE"
+Me.Décisionn.AddItem "Incomplet"
+Me.Décisionn.AddItem "REFUSE"
+Me.Décisionn.AddItem "SUSPENDU"
+
+
+
+End Sub
+
+
+Private Sub TextBox11_Change()
+
+End Sub
+
+Private Sub UserForm_activate()
+
+Me.colaborateur.Value = Application.UserName
+Me.indexx = NbLignetxt
+Me.datee.Value = Format(Date, "dd/mm/yyyy")
+Me.heure.Value = Format(Date, "dd-mm-yyyy") & "-" & Format(Time, "hh:mm:ss")
+ 
+Me.TextBox17 = ""
+Me.TextBox19 = ""
+Me.TextBox21 = ""
+ Feuil1.Range("D1:N4653").AdvancedFilter Action:=xlFilterCopy, _
+        CriteriaRange:=Feuil1.Range("q1:x2"), CopyToRange:=Feuil2.Range("D1:N1"), Unique:=False
+Call TextBox14_Change
+End Sub
+Private Sub colaborateur_KeyPress(ByVal KeyAscii As MSForms.ReturnInteger)
+Dim sh1 As Worksheet
+Set sh1 = ThisWorkbook.Sheets("Feuil1")
+Me.colaborateur.Value = sh1.Range("P3").Value
+sh1.Range("P3").Value = Application.UserName
+End Sub
+Private Sub Ajouter_Click()
+ThisWorkbook.Unprotect "dps"
+Call insertion("Ajout")
+ThisWorkbook.Protect "dps"
+End Sub
+Private Sub Modifier_Click()
+insertion ("Modif")
+End Sub
+
+
+Private Sub TextBox14_Change()
+Dim sh3 As Worksheet
+Set sh2 = ThisWorkbook.Sheets("Feuil2")
+ThisWorkbook.Unprotect "dps"
+ThisWorkbook.Sheets("Feuil2").Visible = True
+
+ Feuil1.Range("D1:N4653").AdvancedFilter Action:=xlFilterCopy, _
+        CriteriaRange:=Feuil1.Range("q1:x2"), CopyToRange:=Feuil2.Range("D1:N1"), Unique:=False
+sh2.Range("o1").Value = sh2.Range("D" & Rows.Count).End(xlUp).Row - 1
+TextBox14 = sh2.Range("o1").Value & " lignes saisies aujourdhui"
+
+ThisWorkbook.Protect "dps"
+End Sub
+Private Sub vider_form()
+ThisWorkbook.Unprotect "dps"
+Me.activ = ""
+Me.produitt = ""
+Me.commentaire = ""
+Me.Dossierss = ""
+Me.Décisionn = ""
+Me.indexx = ""
+ThisWorkbook.Protect "dps"
+End Sub
+
+Sub tableau_Click()
+Dim sh1 As Worksheet
+Dim sh2 As Worksheet
+Dim sh5 As Worksheet
+Dim nlignetotal1 As Integer
+Dim nlignetotal2 As Integer
+
+
+Set sh1 = ThisWorkbook.Sheets("Feuil1")
+Set sh2 = ThisWorkbook.Sheets("Feuil2")
+Set sh5 = ThisWorkbook.Sheets("Feuil4")
+ThisWorkbook.Unprotect "dps"
+sh5.Activate
+sh5.Unprotect "dps"
+Me.activ = Me.tableau.List(Me.tableau.ListIndex, 2)
+Me.produitt = Me.tableau.List(Me.tableau.ListIndex, 3)
+Me.Dossierss = Me.tableau.List(Me.tableau.ListIndex, 4)
+Me.Décisionn = Me.tableau.List(Me.tableau.ListIndex, 5)
+Me.commentaire = Me.tableau.List(Me.tableau.ListIndex, 6)
+Me.indexx = Me.tableau.List(Me.tableau.ListIndex, 9)
+
+
+ThisWorkbook.Sheets("Feuil1").Visible = True
+ThisWorkbook.Sheets("Feuil2").Visible = True
+sh1.Select
+Application.ScreenUpdating = False
+nlignetotal1 = sh1.Range("D" & Rows.Count).End(xlUp).Row
+sh2.Visible = True
+nlignetotal2 = sh2.Range("D" & Rows.Count).End(xlUp).Row
+ For i = 0 To Me.tableau.ListCount - 1
+        If Me.tableau.Selected(i) = True Then
+        
+
+  
+sh1.Range("v3").Value = i
+
+
+End If
+
+Next i
+
+
+Application.ScreenUpdating = True
+Application.EnableEvents = True
+ThisWorkbook.Sheets("Feuil1").Visible = xlVeryHidden
+ThisWorkbook.Sheets("Feuil2").Visible = xlVeryHidden
+sh5.Protect "dps"
+Me.tableau.Selected(0) = False
+ThisWorkbook.Protect "dps"
+End Sub
+
+
+
+
+Private Sub suppression_Click()
+Dim sh1 As Worksheet
+Dim sh5 As Worksheet
+Dim sh2 As Worksheet
+Dim fileNameCSV As String
+Set sh2 = ThisWorkbook.Sheets("Feuil2")
+Set sh1 = ThisWorkbook.Sheets("Feuil1")
+Set sh5 = ThisWorkbook.Sheets("Feuil4")
+Dim ligne As Integer: Dim test As Boolean
+Dim n As Integer
+Dim myWorksheet As Worksheet
+
+fileNameCSV = "\\Uf11pu01\EIDS_FLOA_OCTROI\BD DATA OCTROI Rabat26\" & Application.UserName & "_2026" & ".csv"
+Me.datee.Value = Format(Date, "dd/mm/yyyy")
+sh5.Unprotect "dps"
+ThisWorkbook.Unprotect "dps"
+colaborateur = Application.UserName
+sh1.Range("Q2").Value = Date
+Feuil1.Range("x2").Value = "Validé"
+ligne = NvLigne
+
+    
+Dim Collaborateur As String
+Dim date2  As String
+
+Dim Activité As String
+
+Dim produit As String
+
+Dim commentaire As String
+Dim Dossier As String
+Dim Décision As String
+
+Dim Flag As String
+Dim index As String
+Dim NbLignetxt As Long
+
+
+Dim intFic As Integer
+Dim strLigne As String
+Dim site As String
+
+
+ sh1.Range("z1").Value = sh1.Range("M" & Rows.Count).End(xlUp).Row
+
+sh1.Range("z2").Value = sh1.Range("M" & Rows.Count).End(xlUp).Row
+
+
+If MsgBox("Voulez-vous supprimer cette ligne ?", vbYesNo + vbQuestion) = vbYes Then
+
+
+Collaborateur = Me.colaborateur
+date2 = Me.datee
+Activité = Me.activ
+produit = Me.produitt
+commentaire = Me.commentaire
+Dossier = Me.Dossierss
+Décision = Me.Décisionn
+Flag = "supprimé"
+Dateetheuredesaisie = Format(Date, "dd-mm-yyyy") & "-" & Format(Time, "hh:mm:ss")
+index = Me.indexx
+site = "Rabat"
+
+ If Dir(fileNameCSV) <> "" Then
+        ' Le fichier CSV existe, ajouter les données à la fin du fichier
+        Open fileNameCSV For Append As #1
+        Print #1, Collaborateur & ";" & Date & ";" & Activité & ";" & produit & ";" & Dossierss & ";" & Décision & ";" & commentaire & ";" & Dateetheuredesaisie & ";" & Flag & ";" & index & ";" & site
+        Close #1
+    Else
+        ' Le fichier CSV n'existe pas, créer un nouveau fichier et enregistrer les données
+        Open fileNameCSV For Output As #1
+        Print #1, "Collaborateur;Date2;Activité; produit;Dossier;Décision;commentaire;Date et heure de saisie;Flag;index;site"
+        Print #1, Collaborateur & ";" & Date & ";" & Activité & ";" & produit & ";" & Dossierss & ";" & Décision & ";" & commentaire & ";" & Dateetheuredesaisie & ";" & "supprimé" & ";" & index & ";" & site
+        Close #1
+    End If
+
+
+Dim maxi As Long
+
+
+
+Flag = "supprimé"
+
+
+Set sh1 = ThisWorkbook.Sheets("Feuil1")
+Set sh2 = ThisWorkbook.Sheets("Feuil2")
+Set sh5 = ThisWorkbook.Sheets("Feuil4")
+ThisWorkbook.Unprotect "dps"
+sh5.Unprotect "dps"
+
+
+ThisWorkbook.Sheets("Feuil1").Visible = True
+ThisWorkbook.Sheets("Feuil1").Select
+Application.ScreenUpdating = False
+
+'fonction index pour trouver lindex corresponandant dans feuil2 et puis fonctuion equiv pour trouver la ligne de l'index trouvé dans feuil1
+'fonction index
+    Feuil1.Range("O1").Select
+    Application.CutCopyMode = False
+    ActiveCell.Formula2R1C1 = "=INDEX(Feuil2!C[-2],R[2]C[7]+1,1)"
+    'fonction equiv
+    Feuil1.Range("P1").Select
+    Application.CutCopyMode = False
+    Application.CutCopyMode = False
+    ActiveCell.FormulaR1C1 = "=MATCH(RC[-1],C[-3],0)"
+
+
+sh1.Rows(Range("p1").Value).EntireRow.Delete
+ 
+ 
+Call vider_form
+sh5.Protect "dps"
+ThisWorkbook.Protect "dps"
+
+Else
+Exit Sub
+Call vider_form
+ThisWorkbook.Protect "dps"
+sh5.Protect "dps"
+End If
+
+sh1.Range("v2").Value = ""
+
+Feuil2.Range("q2").Value = Me.datee
+Feuil2.Range("q2").Value = CStr(Format(Date, "mm/dd/yy"))
+ Feuil1.Range("D1:N4653").AdvancedFilter Action:=xlFilterCopy, _
+        CriteriaRange:=Feuil2.Range("Q1:R2"), CopyToRange:=Feuil2.Range("D1:N1"), _
+        Unique:=False
+sh5.Activate
+
+
+Call vider_form
+Me.tableau.ListIndex = 500
+Application.ScreenUpdating = False
+Application.DisplayAlerts = False
+ThisWorkbook.Protect "dps"
+Call copiesauvegarde
+Call TextBox14_Change
+Call TextBox17_Change
+
+Application.ScreenUpdating = False
+Application.DisplayAlerts = False
+
+Me.TextBox17 = ""
+Me.TextBox19 = ""
+Me.TextBox21 = ""
+Call TextBox14_Change
+
+sh5.Protect "dps"
+ThisWorkbook.Protect "dps"
+  ActiveWorkbook.Save
+End Sub
+
+
+Private Sub UserForm_Initialize()
+
+Dim a As Integer
+
+
+Dim c As Variant
+
+Dim b As Integer
+
+With Me.activ
+.AddItem "Octroi Classique"
+.AddItem "Live Console"
+End With
+
+
+End Sub
+Function NvLigne()
+Dim ligne As Integer
+Dim sh1 As Worksheet
+Set sh1 = ThisWorkbook.Sheets("Feuil1")
+ligne = 2
+Do While sh1.Cells(ligne, 4).Value <> ""
+ligne = ligne + 1
+If (ligne > 10000) Then Exit Do
+Loop
+NvLigne = ligne
+End Function
+Private Sub Workbook_Open()
+Dim critere As String
+Dim nligne As Integer
+Dim X As Integer
+critere = Sheets("Feuil1").Range("s1")
+If Sheets("Feuil1").Cells(Rows.Count, 1).End(x1up).Row = 1 Then
+nligne = 2
+Else
+nligne = Cells(Rows.Count, 1).End(x1up).Row
+End If
+
+For X = 1 To nligne
+If Cells(X, 4) = critere Then
+Me.tableau.AddItem Cells(X, 1)
+ 
+Me.tableau.List(Me.tableau.ListCount - 1, 1) = Cells(X, 2)
+Me.tableau.List(Me.tableau.ListCount - 1, 2) = Cells(X, 3)
+Me.tableau.List(Me.tableau.ListCount - 1, 3) = Cells(X, 4)
+Me.tableau.List(Me.tableau.ListCount - 1, 4) = Cells(X, 5)
+Me.tableau.List(Me.tableau.ListCount - 1, 5) = Cells(X, 6)
+Me.tableau.List(Me.tableau.ListCount - 1, 6) = Cells(X, 7)
+Me.tableau.List(Me.tableau.ListCount - 1, 7) = Cells(X, 8)
+Me.tableau.List(Me.tableau.ListCount - 1, 8) = Cells(X, 9)
+Me.tableau.List(Me.tableau.ListCount - 1, 9) = Cells(X, 10)
+End If
+Next X
+End Sub
+
+Private Sub copiesauvegarde()
+Dim sh1 As Worksheet
+Set sh1 = ThisWorkbook.Sheets("Feuil1")
+Dim fileNameCSV As String
+Dim strDate As String
+fileNameCSV = "\\Uf11pu01\EIDS_FLOA_OCTROI\BD DATA OCTROI Rabat26\" & Application.UserName & "_2026" & ".csv"
+Application.AlertBeforeOverwriting = False
+ActiveWorkbook.Save
+Count = Len(fileNameCSV)
+nom = Left(fileNameCSV, Count - 4)
+strDate = Format(Date, "dd-mm-yy") & " " & Format(Time, "h-mm-ss")
+Dossier = "\\Uf11pu01\EIDS_FLOA_OCTROI\BD DATA OCTROI Rabat Archives\" & Application.UserName
+ThisWorkbook.Unprotect "dps"
+ThisWorkbook.Sheets("Feuil1").Visible = True
+ThisWorkbook.Sheets("Feuil4").Visible = xlVeryHidden
+ThisWorkbook.Sheets("Feuil1").Activate
+ThisWorkbook.SaveCopyAs Filename:=Dossier & strDate & ".csv"
+ThisWorkbook.Sheets("Feuil4").Visible = True
+ThisWorkbook.Sheets("Feuil1").Visible = xlVeryHidden
+
+ThisWorkbook.Protect "dps"
+End Sub
+Sub CompteLigne()
+ 
+Dim NbLignetxt As Long
+Dim intFic As Integer
+Dim strLigne As String
+ 
+intFic = FreeFile
+Open "\\Uf11pu01\EIDS_FLOA_OCTROI\BD DATA OCTROI Rabat26\" & Application.UserName & "_2026" & ".csv" For Input As intFic
+While Not EOF(intFic)
+    Line Input #intFic, strLigne
+    NbLignetxt = NbLignetxt + 1
+Wend
+Close intFic
+    MsgBox NbLignetxt
+    
+    
+    Feuil1.Range("y2").Value = NbLignetxt
+End Sub
+
+Function selectsomedatalistbox()
+tableau.columnwitdhs = "80;80;80;80;80;80;100;100"
+Dim lastrow As Long
+Dim rowdata As Variant
+Dim z As Long
+lastrow = Cells(Rows.Count, "A").End(x1up).Row
+Set DataRange = Range("A2:G" & lastrow)
+ReDim rowdata(1 To lastrow, 1 To 8)
+For z = 1 To lastrow
+rowdata(z, 1) = DataRange.Cells(z, 1).Value
+rowdata(z, 2) = DataRange.Cells(z, 2).Value
+
+rowdata(z, 3) = DataRange.Cells(z, 3).Value
+
+rowdata(z, 4) = DataRange.Cells(z, 4).Value
+
+rowdata(z, 5) = DataRange.Cells(z, 5).Value
+
+rowdata(z, 6) = DataRange.Cells(z, 6).Value
+
+rowdata(z, 7) = DataRange.Cells(z, 7).Value
+
+rowdata(z, 8) = DataRange.Cells(z, 10).Value
+Next z
+tableau.List = rowdata
+
+End Function
+
+Private Sub aa()
+  Unload UserForm: UserForm.Show 0
+End Sub
+
+Private Sub TextBox17_Change()
+Dim sh2 As Worksheet
+Set sh2 = ThisWorkbook.Sheets("Feuil2")
+
+ThisWorkbook.Unprotect "dps"
+ThisWorkbook.Sheets("Feuil1").Visible = True
+ThisWorkbook.Sheets("Feuil2").Visible = True
+
+ThisWorkbook.Sheets("Feuil2").Visible = True
+ThisWorkbook.Sheets("Feuil4").Visible = True
+
+If Me.TextBox17.Value <> "" Then
+Feuil1.Range("q2").Value = CStr(Format(Date, "mm/dd/yy"))
+Feuil1.Range("r2").Value = Me.TextBox17
+ Feuil1.Range("D1:N4653").AdvancedFilter Action:=xlFilterCopy, _
+        CriteriaRange:=Feuil1.Range("q1:x2"), CopyToRange:=Feuil2.Range("D1:N1"), Unique:=False
+
+Else
+If Me.TextBox17.Value <> "" And Me.TextBox19.Value <> "" Then
+  Feuil1.Range("s2").Value = Me.TextBox19
+Feuil1.Range("r2").Value = Me.TextBox17
+ Feuil1.Range("D1:N4653").AdvancedFilter Action:=xlFilterCopy, _
+        CriteriaRange:=Feuil1.Range("q1:x2"), CopyToRange:=Feuil2.Range("D1:N1"), Unique:=False
+
+Else
+If Me.TextBox17.Value = "" And Me.TextBox19.Value <> "" Then
+Feuil1.Range("r2").Value = ""
+  Feuil1.Range("s2").Value = Me.TextBox19
+
+ Feuil1.Range("D1:N4653").AdvancedFilter Action:=xlFilterCopy, _
+        CriteriaRange:=Feuil1.Range("q1:x2"), CopyToRange:=Feuil2.Range("D1:N1"), Unique:=False
+        
+              
+        
+           Else
+        
+        If Me.TextBox21 <> "" And Me.TextBox17 <> "" And Me.TextBox19 = "" Then
+
+  Feuil1.Range("t2").Value = Me.TextBox21
+Feuil1.Range("r2").Value = Me.TextBox17
+  Feuil1.Range("s2").Value = ""
+ Feuil1.Range("D1:N4653").AdvancedFilter Action:=xlFilterCopy, _
+        CriteriaRange:=Feuil1.Range("q1:x2"), CopyToRange:=Feuil2.Range("D1:N1"), Unique:=False
+        
+             
+                       
+        
+        Else
+        
+        If Me.TextBox21 <> "" And Me.TextBox17 = "" And Me.TextBox19 = "" Then
+
+  Feuil1.Range("t2").Value = Me.TextBox21
+Feuil1.Range("r2").Value = ""
+  Feuil1.Range("s2").Value = ""
+ Feuil1.Range("D1:N4653").AdvancedFilter Action:=xlFilterCopy, _
+        CriteriaRange:=Feuil1.Range("q1:x2"), CopyToRange:=Feuil2.Range("D1:N1"), Unique:=False
+        
+        
+        
+         Else
+Feuil1.Range("s2").Value = ""
+Feuil1.Range("r2").Value = ""
+ Feuil1.Range("D1:N4653").AdvancedFilter Action:=xlFilterCopy, _
+        CriteriaRange:=Feuil1.Range("q1:x2"), CopyToRange:=Feuil2.Range("D1:N1"), Unique:=False
+ 
+ End If
+   End If
+ End If
+   End If
+End If
+
+
+ThisWorkbook.Protect "dps"
+
+Call TextBox14_Change
+
+End Sub
+
+Private Sub TextBox19_Change()
+Dim sh2 As Worksheet
+Set sh2 = ThisWorkbook.Sheets("Feuil2")
+
+ThisWorkbook.Unprotect "dps"
+ThisWorkbook.Sheets("Feuil1").Visible = True
+ThisWorkbook.Sheets("Feuil2").Visible = True
+
+ThisWorkbook.Sheets("Feuil2").Visible = True
+ThisWorkbook.Sheets("Feuil4").Visible = True
+
+
+If Me.TextBox17.Value <> "" Then
+
+Feuil1.Range("r2").Value = Me.TextBox17
+  Feuil1.Range("s2").Value = Me.TextBox19
+
+ Feuil1.Range("D1:N4653").AdvancedFilter Action:=xlFilterCopy, _
+        CriteriaRange:=Feuil1.Range("q1:x2"), CopyToRange:=Feuil2.Range("D1:N1"), Unique:=False
+        Else
+If Me.TextBox19.Value <> "" Then
+
+Feuil1.Range("q2").Value = CStr(Format(Date, "mm/dd/yy"))
+Feuil1.Range("s2").Value = Me.TextBox19
+ Feuil1.Range("D1:N4653").AdvancedFilter Action:=xlFilterCopy, _
+        CriteriaRange:=Feuil1.Range("q1:x2"), CopyToRange:=Feuil2.Range("D1:N1"), Unique:=False
+
+Else
+
+If Me.TextBox17.Value <> "" And Me.TextBox19.Value <> "" Then
+Feuil1.Range("s2").Value = Me.TextBox19
+Feuil1.Range("r2").Value = Me.TextBox17
+ Feuil1.Range("D1:N4653").AdvancedFilter Action:=xlFilterCopy, _
+        CriteriaRange:=Feuil1.Range("q1:x2"), CopyToRange:=Feuil2.Range("D1:N1"), Unique:=False
+        Else
+     If Me.TextBox17.Value = "" And Me.TextBox19.Value <> "" Then
+     Feuil1.Range("r2").Value = ""
+     Feuil1.Range("s2").Value = Me.TextBox19
+
+      Feuil1.Range("D1:N4653").AdvancedFilter Action:=xlFilterCopy, _
+       CriteriaRange:=Feuil1.Range("q1:x2"), CopyToRange:=Feuil2.Range("D1:N1"), Unique:=False
+       
+       
+          Else
+     If Me.TextBox17.Value = "" And Me.TextBox21 <> "" And Me.TextBox19.Value <> "" Then
+     Feuil1.Range("r2").Value = ""
+      Feuil1.Range("t2").Value = Me.TextBox21
+     
+     Feuil1.Range("s2").Value = Me.TextBox19
+
+      Feuil1.Range("D1:N4653").AdvancedFilter Action:=xlFilterCopy, _
+       CriteriaRange:=Feuil1.Range("q1:x2"), CopyToRange:=Feuil2.Range("D1:N1"), Unique:=False
+        
+            
+          Else
+     If Me.TextBox17.Value <> "" And Me.TextBox21 <> "" And Me.TextBox19.Value = "" Then
+     Feuil1.Range("r2").Value = Me.TextBox17
+     Feuil1.Range("t2").Value = Me.TextBox21
+     
+     Feuil1.Range("s2").Value = ""
+
+      Feuil1.Range("D1:N4653").AdvancedFilter Action:=xlFilterCopy, _
+       CriteriaRange:=Feuil1.Range("q1:x2"), CopyToRange:=Feuil2.Range("D1:N1"), Unique:=False
+        
+      Else
+     If Me.TextBox17.Value = "" And Me.TextBox21 <> "" And Me.TextBox19.Value = "" Then
+     Feuil1.Range("r2").Value = ""
+     Feuil1.Range("t2").Value = Me.TextBox21
+     
+     Feuil1.Range("s2").Value = ""
+
+      Feuil1.Range("D1:N4653").AdvancedFilter Action:=xlFilterCopy, _
+       CriteriaRange:=Feuil1.Range("q1:x2"), CopyToRange:=Feuil2.Range("D1:N1"), Unique:=False
+        
+        
+        Else
+Feuil1.Range("s2").Value = ""
+Feuil1.Range("r2").Value = ""
+Feuil1.Range("t2").Value = ""
+ Feuil1.Range("D1:N4653").AdvancedFilter Action:=xlFilterCopy, _
+        CriteriaRange:=Feuil1.Range("q1:x2"), CopyToRange:=Feuil2.Range("D1:N1"), Unique:=False
+ End If
+   End If
+     End If
+    End If
+ End If
+ End If
+  End If
+
+ThisWorkbook.Protect "dps"
+
+Call TextBox14_Change
+End Sub
+
+Private Sub TextBox21_Change()
+Dim sh2 As Worksheet
+Set sh2 = ThisWorkbook.Sheets("Feuil2")
+
+ThisWorkbook.Unprotect "dps"
+ThisWorkbook.Sheets("Feuil1").Visible = True
+ThisWorkbook.Sheets("Feuil2").Visible = True
+
+ThisWorkbook.Sheets("Feuil2").Visible = True
+ThisWorkbook.Sheets("Feuil4").Visible = True
+
+
+If Me.TextBox17.Value <> "" Then
+
+Feuil1.Range("r2").Value = Me.TextBox17
+  Feuil1.Range("t2").Value = Me.TextBox21
+ Feuil1.Range("D1:N4653").AdvancedFilter Action:=xlFilterCopy, _
+        CriteriaRange:=Feuil1.Range("q1:x2"), CopyToRange:=Feuil2.Range("D1:N1"), Unique:=False
+        Else
+If Me.TextBox19.Value <> "" Then
+
+Feuil1.Range("q2").Value = CStr(Format(Date, "mm/dd/yy"))
+Feuil1.Range("s2").Value = Me.TextBox19
+Feuil1.Range("t2").Value = Me.TextBox21
+ Feuil1.Range("D1:N4653").AdvancedFilter Action:=xlFilterCopy, _
+        CriteriaRange:=Feuil1.Range("q1:x2"), CopyToRange:=Feuil2.Range("D1:N1"), Unique:=False
+
+
+Else
+
+If Me.TextBox17.Value <> "" And Me.TextBox19.Value <> "" And Me.TextBox21 <> "" Then
+Feuil1.Range("s2").Value = Me.TextBox19
+Feuil1.Range("r2").Value = Me.TextBox17
+Feuil1.Range("t2").Value = Me.TextBox21
+ Feuil1.Range("D1:N4653").AdvancedFilter Action:=xlFilterCopy, _
+        CriteriaRange:=Feuil1.Range("q1:x2"), CopyToRange:=Feuil2.Range("D1:N1"), Unique:=False
+        Else
+     If Me.TextBox17.Value = "" And Me.TextBox19.Value = "" And Me.TextBox21 <> "" Then
+     Feuil1.Range("r2").Value = ""
+     Feuil1.Range("s2").Value = ""
+     Feuil1.Range("t2").Value = Me.TextBox21
+     
+      Feuil1.Range("D1:N4653").AdvancedFilter Action:=xlFilterCopy, _
+       CriteriaRange:=Feuil1.Range("q1:x2"), CopyToRange:=Feuil2.Range("D1:N1"), Unique:=False
+            
+       
+        Else
+     If Me.TextBox17.Value <> "" And Me.TextBox19.Value = "" And Me.TextBox21 <> "" Then
+     Feuil1.Range("r2").Value = Me.TextBox17
+     Feuil1.Range("s2").Value = ""
+     Feuil1.Range("t2").Value = Me.TextBox21
+     
+      Feuil1.Range("D1:N4653").AdvancedFilter Action:=xlFilterCopy, _
+       CriteriaRange:=Feuil1.Range("q1:x2"), CopyToRange:=Feuil2.Range("D1:N1"), Unique:=False
+    
+        
+        Else
+Feuil1.Range("s2").Value = ""
+Feuil1.Range("r2").Value = ""
+Feuil1.Range("t2").Value = ""
+ Feuil1.Range("D1:N4653").AdvancedFilter Action:=xlFilterCopy, _
+        CriteriaRange:=Feuil1.Range("q1:x2"), CopyToRange:=Feuil2.Range("D1:N1"), Unique:=False
+ End If
+   End If
+ End If
+ End If
+  End If
+
+ThisWorkbook.Protect "dps"
+
+Call TextBox14_Change
+End Sub
+
+
+Sub Macro3()
+'
+' Macro3 Macro
+'
+
+'
+    Workbooks.Open Filename:= _
+        "\\Uf11pu01\EIDS_FLOA_OCTROI\BD DATA OCTROI Rabat26\" & Application.UserName & "_2026" & ".csv"
+    Columns("A:k").Select
+    ActiveSheet.Range("$a$1:$a$10000").RemoveDuplicates Columns:=1, Header:=xlNo
+
+    ActiveWorkbook.Save
+    ActiveWindow.Close
+End Sub
+
+
+
+
