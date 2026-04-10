@@ -10,36 +10,44 @@ Private Sub cmb_Sauvegarder_Click()
         MsgBox "Aucune donnée à sauvegarder.", vbExclamation
         Exit Sub
     End If
-    
+
     ' Infos fichier
     Dim userName As String
-    Dim mois As String, annee As String
+    Dim moisActuel As String, anneeActuelle As String
     
     userName = Environ("USERNAME")
-    mois = Format(Date, "mm")
-    annee = Format(Date, "yyyy")
+    moisActuel = Format(Date, "mm")
+    anneeActuelle = Format(Date, "yyyy")
     
     Dim filePath As String
-    filePath = "\\uf11pu01\Accessibilité_conseiller\" & userName & "_" & mois & "_" & annee & ".csv"
+    filePath = "\\uf11pu01\Accessibilité_conseiller\" & userName & "_" & moisActuel & "_" & anneeActuelle & ".csv"
     
     Dim fileNum As Integer
     fileNum = FreeFile
     
-    ' Ouvrir fichier (Append si existe, sinon créer)
+    ' Ouvrir fichier (append = ajoute si existe, sinon crée)
     Open filePath For Append As #fileNum
-    
+
     Dim ligneCSV As String
-    Dim ligneDate As Date
+    Dim ligneDate As String
+    Dim moisLigne As String, anneeLigne As String
     
+    Dim nbExport As Long
+    nbExport = 0
+
     For i = 2 To lastRow
         
-        ' Vérifier si la ligne correspond au mois actuel
-        If IsDate(ws.Cells(i, 2).Value) Then
-            ligneDate = ws.Cells(i, 2).Value
+        ligneDate = ws.Cells(i, 2).Value ' colonne B
+        
+        If ligneDate <> "" Then
             
-            If Month(ligneDate) = Month(Date) And Year(ligneDate) = Year(Date) Then
+            ' Extraire mois et année depuis format "dd/mm/yyyy"
+            moisLigne = Mid(ligneDate, 4, 2)
+            anneeLigne = Mid(ligneDate, 7, 4)
+            
+            ' Vérifier si correspond au mois actuel
+            If moisLigne = moisActuel And anneeLigne = anneeActuelle Then
                 
-                ' Construire ligne CSV
                 ligneCSV = ws.Cells(i, 1).Value & ";" & _
                            ws.Cells(i, 2).Value & ";" & _
                            ws.Cells(i, 3).Value & ";" & _
@@ -51,16 +59,20 @@ Private Sub cmb_Sauvegarder_Click()
                            ws.Cells(i, 9).Value & ";" & _
                            ws.Cells(i, 10).Value
                 
-                ' Écrire dans fichier
                 Print #fileNum, ligneCSV
+                nbExport = nbExport + 1
                 
             End If
         End If
         
     Next i
-    
+
     Close #fileNum
-    
-    MsgBox "Sauvegarde effectuée avec succès.", vbInformation
+
+    If nbExport = 0 Then
+        MsgBox "Aucune donnée du mois actuel trouvée.", vbInformation
+    Else
+        MsgBox nbExport & " ligne(s) sauvegardée(s) avec succès.", vbInformation
+    End If
 
 End Sub
