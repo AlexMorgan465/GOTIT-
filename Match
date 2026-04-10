@@ -11,26 +11,18 @@ Private Sub cmb_Sauvegarder_Click()
         Exit Sub
     End If
 
-    ' Infos fichier
     Dim userName As String
-    Dim moisActuel As String, anneeActuelle As String
-    
     userName = Environ("USERNAME")
-    moisActuel = Format(Date, "mm")
-    anneeActuelle = Format(Date, "yyyy")
     
-    Dim filePath As String
-    filePath = "\\uf11pu01\Accessibilité_conseiller\" & userName & "_" & moisActuel & "_" & anneeActuelle & ".csv"
-    
-    Dim fileNum As Integer
-    fileNum = FreeFile
-    
-    ' Ouvrir fichier (append = ajoute si existe, sinon crée)
-    Open filePath For Append As #fileNum
-
-    Dim ligneCSV As String
     Dim ligneDate As String
     Dim moisLigne As String, anneeLigne As String
+    Dim filePath As String
+    Dim ligneCSV As String
+    
+    Dim fileDict As Object
+    Set fileDict = CreateObject("Scripting.Dictionary")
+    
+    Dim fileNum As Integer
     
     Dim nbExport As Long
     nbExport = 0
@@ -41,38 +33,48 @@ Private Sub cmb_Sauvegarder_Click()
         
         If ligneDate <> "" Then
             
-            ' Extraire mois et année depuis format "dd/mm/yyyy"
+            ' Extraire mois et année depuis "dd/mm/yyyy"
             moisLigne = Mid(ligneDate, 4, 2)
             anneeLigne = Mid(ligneDate, 7, 4)
             
-            ' Vérifier si correspond au mois actuel
-            If moisLigne = moisActuel And anneeLigne = anneeActuelle Then
-                
-                ligneCSV = ws.Cells(i, 1).Value & ";" & _
-                           ws.Cells(i, 2).Value & ";" & _
-                           ws.Cells(i, 3).Value & ";" & _
-                           ws.Cells(i, 4).Value & ";" & _
-                           ws.Cells(i, 5).Value & ";" & _
-                           ws.Cells(i, 6).Value & ";" & _
-                           ws.Cells(i, 7).Value & ";" & _
-                           ws.Cells(i, 8).Value & ";" & _
-                           ws.Cells(i, 9).Value & ";" & _
-                           ws.Cells(i, 10).Value
-                
-                Print #fileNum, ligneCSV
-                nbExport = nbExport + 1
-                
+            ' Construire chemin fichier
+            filePath = "\\uf11pu01\Accessibilité_conseiller\" & _
+                       userName & "_" & moisLigne & "_" & anneeLigne & ".csv"
+            
+            ' Ouvrir fichier UNE SEULE FOIS par mois
+            If Not fileDict.exists(filePath) Then
+                fileNum = FreeFile
+                Open filePath For Append As #fileNum
+                fileDict.Add filePath, fileNum
             End If
+            
+            fileNum = fileDict(filePath)
+            
+            ' Construire ligne CSV
+            ligneCSV = ws.Cells(i, 1).Value & ";" & _
+                       ws.Cells(i, 2).Value & ";" & _
+                       ws.Cells(i, 3).Value & ";" & _
+                       ws.Cells(i, 4).Value & ";" & _
+                       ws.Cells(i, 5).Value & ";" & _
+                       ws.Cells(i, 6).Value & ";" & _
+                       ws.Cells(i, 7).Value & ";" & _
+                       ws.Cells(i, 8).Value & ";" & _
+                       ws.Cells(i, 9).Value & ";" & _
+                       ws.Cells(i, 10).Value
+            
+            Print #fileNum, ligneCSV
+            nbExport = nbExport + 1
+            
         End If
         
     Next i
 
-    Close #fileNum
+    ' Fermer tous les fichiers ouverts
+    Dim key As Variant
+    For Each key In fileDict.Keys
+        Close #fileDict(key)
+    Next key
 
-    If nbExport = 0 Then
-        MsgBox "Aucune donnée du mois actuel trouvée.", vbInformation
-    Else
-        MsgBox nbExport & " ligne(s) sauvegardée(s) avec succès.", vbInformation
-    End If
+    MsgBox nbExport & " ligne(s) sauvegardée(s) dans les fichiers mensuels.", vbInformation
 
 End Sub
