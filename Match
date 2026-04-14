@@ -1,11 +1,8 @@
 Sub CopierOcaocrDepuisTousCofidis()
 
-    Dim WbSource As Workbook
     Dim WbDest As Workbook
-    Dim WsSource As Worksheet
     Dim WsDest As Worksheet
     Dim Dossier As String
-    Dim Fichier As String
     
     Application.ScreenUpdating = False
     Application.DisplayAlerts = False
@@ -13,35 +10,54 @@ Sub CopierOcaocrDepuisTousCofidis()
     Set WbDest = ThisWorkbook
     Set WsDest = WbDest.Sheets("ocaocr")
     
-    ' Chemin du dossier
+    ' Dossier principal
     Dossier = "\\desktop\vba\"
     
-    ' Cherche tous les fichiers cofidis.xlsm dans le dossier
-    Fichier = Dir(Dossier & "*cofidis*.xlsm")
-    
-    Do While Fichier <> ""
-        
-        ' Ouvre le fichier
-        Set WbSource = Workbooks.Open(Dossier & Fichier)
-        Set WsSource = WbSource.Sheets("ocaocr")
-        
-        ' (Optionnel) vider avant chaque copie → sinon commenter
-        WsDest.Cells.Clear
-        
-        ' Copie identique (aucun changement)
-        WsSource.Cells.Copy Destination:=WsDest.Range("A1")
-        
-        ' Ferme le fichier source
-        WbSource.Close SaveChanges:=False
-        
-        ' Fichier suivant
-        Fichier = Dir
-        
-    Loop
+    ' Lancer la recherche récursive
+    ParcourirDossiers Dossier, WsDest
     
     Application.DisplayAlerts = True
     Application.ScreenUpdating = True
     
     MsgBox "Copie terminée pour tous les fichiers !", vbInformation
+
+End Sub
+
+
+Sub ParcourirDossiers(ByVal Chemin As String, WsDest As Worksheet)
+
+    Dim Fichier As String
+    Dim SousDossier As String
+    Dim WbSource As Workbook
+    Dim WsSource As Worksheet
+    
+    ' --- Traiter les fichiers dans ce dossier ---
+    Fichier = Dir(Chemin & "*cofidis*.xlsm")
+    
+    Do While Fichier <> ""
+        
+        Set WbSource = Workbooks.Open(Chemin & Fichier)
+        Set WsSource = WbSource.Sheets("ocaocr")
+        
+        ' Même méthode de copie
+        WsDest.Cells.Clear
+        WsSource.Cells.Copy Destination:=WsDest.Range("A1")
+        
+        WbSource.Close SaveChanges:=False
+        
+        Fichier = Dir
+    Loop
+    
+    ' --- Parcourir les sous-dossiers ---
+    SousDossier = Dir(Chemin, vbDirectory)
+    
+    Do While SousDossier <> ""
+        If SousDossier <> "." And SousDossier <> ".." Then
+            If (GetAttr(Chemin & SousDossier) And vbDirectory) = vbDirectory Then
+                ParcourirDossiers Chemin & SousDossier & "\", WsDest
+            End If
+        End If
+        SousDossier = Dir
+    Loop
 
 End Sub
