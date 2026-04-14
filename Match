@@ -1,9 +1,11 @@
-Sub CopierOcaocrDepuisCofidis()
+Sub CopierOcaocrDepuisTousCofidis()
+
     Dim WbSource As Workbook
     Dim WbDest As Workbook
     Dim WsSource As Worksheet
     Dim WsDest As Worksheet
-    Dim CheminCofidis As String
+    Dim Dossier As String
+    Dim Fichier As String
     
     Application.ScreenUpdating = False
     Application.DisplayAlerts = False
@@ -11,32 +13,35 @@ Sub CopierOcaocrDepuisCofidis()
     Set WbDest = ThisWorkbook
     Set WsDest = WbDest.Sheets("ocaocr")
     
-    ' Mets le chemin complet si cofidis.xlsm n'est pas dans le même dossier
-    CheminCofidis = ThisWorkbook.Path & "\cofidis.xlsm"
+    ' Chemin du dossier
+    Dossier = "\\desktop\vba\"
     
-    ' Vérifie si le classeur source est déjà ouvert
-    On Error Resume Next
-    Set WbSource = Workbooks("cofidis.xlsm")
-    On Error GoTo 0
+    ' Cherche tous les fichiers cofidis.xlsm dans le dossier
+    Fichier = Dir(Dossier & "*cofidis*.xlsm")
     
-    ' Si pas ouvert, on l'ouvre
-    If WbSource Is Nothing Then
-        Set WbSource = Workbooks.Open(CheminCofidis)
-    End If
-    
-    Set WsSource = WbSource.Sheets("ocaocr")
-    
-    ' Vide la feuille destination avant de coller
-    WsDest.Cells.Clear
-    
-    ' Copie-colle tout : valeurs + formats
-    WsSource.Cells.Copy Destination:=WsDest.Range("A1")
-    
-    ' Ferme le classeur source sans sauvegarder
-    WbSource.Close SaveChanges:=False
+    Do While Fichier <> ""
+        
+        ' Ouvre le fichier
+        Set WbSource = Workbooks.Open(Dossier & Fichier)
+        Set WsSource = WbSource.Sheets("ocaocr")
+        
+        ' (Optionnel) vider avant chaque copie → sinon commenter
+        WsDest.Cells.Clear
+        
+        ' Copie identique (aucun changement)
+        WsSource.Cells.Copy Destination:=WsDest.Range("A1")
+        
+        ' Ferme le fichier source
+        WbSource.Close SaveChanges:=False
+        
+        ' Fichier suivant
+        Fichier = Dir
+        
+    Loop
     
     Application.DisplayAlerts = True
     Application.ScreenUpdating = True
     
-    MsgBox "Copie terminée !", vbInformation
+    MsgBox "Copie terminée pour tous les fichiers !", vbInformation
+
 End Sub
