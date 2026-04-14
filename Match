@@ -1,142 +1,110 @@
-Sub MergeAllSheetsFromFiles()
+Sub MergeAllSheets_BulkCopy()
     Dim wsDestOCAOCR As Worksheet, wsDestSOLVA As Worksheet, wsDestETUDEINC As Worksheet
-    Dim wbSource As Workbook, wsSource As Worksheet
-    Dim lastRow As Long, lastCol As Long, formatCol As Long
-    Dim destRowOCAOCR As Long, destRowSOLVA As Long, destRowETUDEINC As Long
-    Dim i As Long
+    Dim wbSource As Workbook
+    Dim wsSource As Worksheet
+    Dim lastRow As Long, formatCol As Long, destRow As Long
     Dim fso As Object, folder As Object, subfolder As Object, fichier As Object
     Dim basePath As String
-    Dim sheetNames As Variant
-    Dim sheetIndex As Integer
-    Dim headerCopied As Boolean   ' per sheet tracking
+    Dim sheetName As String
+    Dim headerCopied As Boolean
+    Dim rngToCopy As Range
+    Dim destSheet As Worksheet
 
     basePath = "\\uf11pu01\COFIDIS_TC\A-PRODUCTION\1-PRODUCTION\CC DFRA\2-Nouveau répertoire"
 
-    ' Set destination sheets (master workbook)
+    ' Feuilles de destination
     Set wsDestOCAOCR = ThisWorkbook.Worksheets("OCAOCR")
     Set wsDestSOLVA = ThisWorkbook.Worksheets("SOLVA")
     Set wsDestETUDEINC = ThisWorkbook.Worksheets("ETUDEINC")
 
-    ' Clear all destination sheets
+    ' Nettoyage des destinations
     wsDestOCAOCR.Cells.Clear
     wsDestSOLVA.Cells.Clear
     wsDestETUDEINC.Cells.Clear
 
-    ' Initialize destination row pointers (row 1 is header, data starts at row 2)
-    destRowOCAOCR = 2
-    destRowSOLVA = 2
-    destRowETUDEINC = 2
+    ' Initialisation des lignes de destination (la ligne 1 recevra l'en-tête du premier fichier)
+    ' On utilisera destRow pour chaque feuille séparément
 
-    ' File system object
     Set fso = CreateObject("Scripting.FileSystemObject")
     Set folder = fso.GetFolder(basePath)
 
-    ' Loop through subfolders and files
+    ' Désactiver les mises à jour d'écran et les calculs pour accélérer
+    Application.ScreenUpdating = False
+    Application.Calculation = xlCalculationManual
+
     For Each subfolder In folder.SubFolders
         For Each fichier In subfolder.Files
-            ' Skip temporary files
             If Left(fichier.Name, 2) = "~$" Then GoTo NEXTFICHIER
 
-            ' Open the source workbook
+            ' Ouvrir le classeur source une seule fois
             Set wbSource = Workbooks.Open(basePath & "\" & subfolder.Name & "\Cofidis.xlsm")
 
-            ' Process each of the three sheets
-            For sheetIndex = 0 To 2
-                Select Case sheetIndex
-                    Case 0
-                        Set wsSource = Nothing
-                        On Error Resume Next
-                        Set wsSource = wbSource.Worksheets("OCAOCR")
-                        On Error GoTo 0
-                        If wsSource Is Nothing Then GoTo NextSheet
-                        ' Copy header if destination is empty
-                        If wsDestOCAOCR.Cells(1, 1).Value = "" Then
-                            wsSource.Rows(1).Copy wsDestOCAOCR.Rows(1)
-                        End If
-                        ' Find column "i"
-                        formatCol = 0
-                        lastCol = wsSource.Cells(1, wsSource.Columns.Count).End(xlToLeft).Column
-                        For i = 1 To lastCol
-                            If LCase(wsSource.Cells(1, i).Value) = "i" Then
-                                formatCol = i
-                                Exit For
-                            End If
-                        Next i
-                        If formatCol > 0 Then
-                            lastRow = wsSource.Cells(wsSource.Rows.Count, 1).End(xlUp).Row
-                            For i = 2 To lastRow
-                                If InStr(1, LCase(wsSource.Cells(i, formatCol).Value)) > 0 Then
-                                    wsSource.Rows(i).Copy wsDestOCAOCR.Rows(destRowOCAOCR)
-                                    destRowOCAOCR = destRowOCAOCR + 1
-                                End If
-                            Next i
-                        Else
-                            ' Optional: log missing column, but continue
-                        End If
-
-                    Case 1
-                        Set wsSource = Nothing
-                        On Error Resume Next
-                        Set wsSource = wbSource.Worksheets("SOLVA")
-                        On Error GoTo 0
-                        If wsSource Is Nothing Then GoTo NextSheet
-                        If wsDestSOLVA.Cells(1, 1).Value = "" Then
-                            wsSource.Rows(1).Copy wsDestSOLVA.Rows(1)
-                        End If
-                        formatCol = 0
-                        lastCol = wsSource.Cells(1, wsSource.Columns.Count).End(xlToLeft).Column
-                        For i = 1 To lastCol
-                            If LCase(wsSource.Cells(1, i).Value) = "i" Then
-                                formatCol = i
-                                Exit For
-                            End If
-                        Next i
-                        If formatCol > 0 Then
-                            lastRow = wsSource.Cells(wsSource.Rows.Count, 1).End(xlUp).Row
-                            For i = 2 To lastRow
-                                If InStr(1, LCase(wsSource.Cells(i, formatCol).Value)) > 0 Then
-                                    wsSource.Rows(i).Copy wsDestSOLVA.Rows(destRowSOLVA)
-                                    destRowSOLVA = destRowSOLVA + 1
-                                End If
-                            Next i
-                        End If
-
-                    Case 2
-                        Set wsSource = Nothing
-                        On Error Resume Next
-                        Set wsSource = wbSource.Worksheets("ETUDEINC")
-                        On Error GoTo 0
-                        If wsSource Is Nothing Then GoTo NextSheet
-                        If wsDestETUDEINC.Cells(1, 1).Value = "" Then
-                            wsSource.Rows(1).Copy wsDestETUDEINC.Rows(1)
-                        End If
-                        formatCol = 0
-                        lastCol = wsSource.Cells(1, wsSource.Columns.Count).End(xlToLeft).Column
-                        For i = 1 To lastCol
-                            If LCase(wsSource.Cells(1, i).Value) = "i" Then
-                                formatCol = i
-                                Exit For
-                            End If
-                        Next i
-                        If formatCol > 0 Then
-                            lastRow = wsSource.Cells(wsSource.Rows.Count, 1).End(xlUp).Row
-                            For i = 2 To lastRow
-                                If InStr(1, LCase(wsSource.Cells(i, formatCol).Value)) > 0 Then
-                                    wsSource.Rows(i).Copy wsDestETUDEINC.Rows(destRowETUDEINC)
-                                    destRowETUDEINC = destRowETUDEINC + 1
-                                End If
-                            Next i
-                        End If
+            ' Traiter les trois feuilles
+            For Each sheetName In Array("OCAOCR", "SOLVA", "ETUDEINC")
+                ' Déterminer la feuille de destination
+                Select Case sheetName
+                    Case "OCAOCR": Set destSheet = wsDestOCAOCR
+                    Case "SOLVA":  Set destSheet = wsDestSOLVA
+                    Case "ETUDEINC": Set destSheet = wsDestETUDEINC
                 End Select
+
+                ' Vérifier si la feuille source existe
+                On Error Resume Next
+                Set wsSource = wbSource.Worksheets(sheetName)
+                On Error GoTo 0
+                If wsSource Is Nothing Then GoTo NextSheet
+
+                ' Trouver la colonne "i"
+                formatCol = 0
+                With wsSource
+                    lastRow = .Cells(.Rows.Count, 1).End(xlUp).Row
+                    If lastRow < 2 Then GoTo NextSheet ' Pas de données
+                    For formatCol = 1 To .Cells(1, .Columns.Count).End(xlToLeft).Column
+                        If LCase(.Cells(1, formatCol).Value) = "i" Then Exit For
+                    Next formatCol
+                End With
+
+                If formatCol = 0 Or formatCol > wsSource.UsedRange.Columns.Count Then
+                    ' Colonne "i" introuvable, on passe
+                    GoTo NextSheet
+                End If
+
+                ' Copier l'en-tête si la destination est vide
+                If destSheet.Cells(1, 1).Value = "" Then
+                    wsSource.Rows(1).Copy destSheet.Rows(1)
+                    ' Initialiser la prochaine ligne de destination (2 = première ligne de données)
+                    ' On garde la dernière ligne utilisée pour chaque feuille
+                    destRow = 2
+                Else
+                    ' Trouver la première ligne vide dans la destination
+                    destRow = destSheet.Cells(destSheet.Rows.Count, 1).End(xlUp).Row + 1
+                End If
+
+                ' Appliquer un filtre sur la colonne "i" pour ne garder que les cellules non vides
+                With wsSource
+                    If .AutoFilterMode Then .AutoFilterMode = False
+                    .Range(.Rows(1), .Rows(lastRow)).AutoFilter Field:=formatCol, Criteria1:="<>"
+                    ' Copier les lignes visibles (sauf l'en-tête) en une seule fois
+                    On Error Resume Next
+                    Set rngToCopy = .Range(.Rows(2), .Rows(lastRow)).SpecialCells(xlCellTypeVisible)
+                    On Error GoTo 0
+                    If Not rngToCopy Is Nothing Then
+                        rngToCopy.Copy destSheet.Cells(destRow, 1)
+                    End If
+                    ' Enlever le filtre
+                    .AutoFilterMode = False
+                End With
 NextSheet:
-            Next sheetIndex
+            Next sheetName
 
-            ' Close the source workbook
             wbSource.Close SaveChanges:=False
-
 NEXTFICHIER:
         Next fichier
     Next subfolder
 
-    MsgBox "Data merged successfully from all files.", vbInformation
+    ' Réactiver les mises à jour
+    Application.ScreenUpdating = True
+    Application.Calculation = xlCalculationAutomatic
+
+    MsgBox "Fusion terminée (copie en bloc).", vbInformation
 End Sub
