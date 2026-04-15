@@ -1,58 +1,575 @@
-Sub CopierOcaocrDepuisTousCofidis()
-    Dim WbDest As Workbook
-    Dim WsDest As Worksheet
-    Dim WbSource As Workbook
-    Dim WsSource As Worksheet
-    Dim CheminDossier As String
-    Dim Fichier As String
-    Dim PremiereCopie As Boolean
+Dim currentRow As Long
+
+Private Sub cmb_Sauvegarder_Click()
+
+    Dim wx As Worksheet
+    Set wx = ThisWorkbook.Worksheets("extraction")
     
-    Application.ScreenUpdating = False
-    Application.DisplayAlerts = False
-    Application.Calculation = xlCalculationManual
+    Dim lastRow As Long, i As Long
+    lastRow = wx.Cells(wx.Rows.Count, 1).End(xlUp).Row
     
-    Set WbDest = ThisWorkbook
-    Set WsDest = WbDest.Sheets("ocaocr")
+    If lastRow < 2 Then
+        MsgBox "Aucune donnée à sauvegarder.", vbExclamation
+        Exit Sub
+    End If
+
+    Dim userName As String
+    userName = Environ("USERNAME")
     
-    ' Dossier à scanner : C:\Users\TonNom\Desktop\vba\
-    CheminDossier = Environ("USERPROFILE") & "\Desktop\vba\"
+    Dim ligneDate As String
+    Dim moisLigne As String, anneeLigne As String
+    Dim filePath As String
+    Dim ligneCSV As String
     
-    ' On vide la feuille destination une seule fois
-    WsDest.Cells.Clear
-    PremiereCopie = True
+    Dim fileDict As Object
+    Set fileDict = CreateObject("Scripting.Dictionary")
     
-    Fichier = Dir(CheminDossier & "cofidis.xlsm")
+    Dim fileNum As Integer
     
-    Do While Fichier <> ""
-        Set WbSource = Workbooks.Open(CheminDossier & Fichier)
+    Dim nbExport As Long
+    nbExport = 0
+
+    For i = 2 To lastRow
         
-        On Error Resume Next
-        Set WsSource = WbSource.Sheets("ocaocr")
-        On Error GoTo 0
+        ligneDate = wx.Cells(i, 2).Value ' colonne B
         
-        If Not WsSource Is Nothing Then
-            If PremiereCopie Then
-                ' Premier fichier : on copie tout avec la même méthode
-                WsSource.Cells.Copy Destination:=WsDest.Range("A1")
-                PremiereCopie = False
-            Else
-                ' Fichiers suivants : on colle à la suite pour ne pas écraser
-                Dim DerniereLigne As Long
-                DerniereLigne = WsDest.Cells(WsDest.Rows.Count, 1).End(xlUp).Row + 1
-                WsSource.Cells.Copy Destination:=WsDest.Range("A" & DerniereLigne)
+        If ligneDate <> "" Then
+            
+            ' Extraire mois et année depuis "dd/mm/yyyy"
+            moisLigne = Mid(ligneDate, 4, 2)
+            anneeLigne = Mid(ligneDate, 7, 4)
+            
+            ' Construire chemin fichier
+            filePath = "\\uf11pu01\ACCESSIBILITÉ_CONSEILLERS\" & _
+                       userName & "_" & moisLigne & "_" & anneeLigne & ".csv"
+            
+            ' Ouvrir fichier UNE SEULE FOIS par mois
+            If Not fileDict.exists(filePath) Then
+                fileNum = FreeFile
+                Open filePath For Append As #fileNum
+                fileDict.Add filePath, fileNum
             End If
+            
+            fileNum = fileDict(filePath)
+            
+            ' Construire ligne CSV
+            ligneCSV = wx.Cells(i, 1).Value & ";" & _
+                       wx.Cells(i, 2).Value & ";" & _
+                       wx.Cells(i, 3).Value & ";" & _
+                       wx.Cells(i, 4).Value & ";" & _
+                       wx.Cells(i, 5).Value & ";" & _
+                       wx.Cells(i, 6).Value & ";" & _
+                       wx.Cells(i, 7).Value & ";" & _
+                       wx.Cells(i, 8).Value & ";" & _
+                       wx.Cells(i, 9).Value & ";" & _
+                       wx.Cells(i, 10).Value
+            
+            Print #fileNum, ligneCSV
+            nbExport = nbExport + 1
+            
         End If
         
-        WbSource.Close SaveChanges:=False
-        Set WsSource = Nothing
-        Set WbSource = Nothing
+    Next i
+
+    ' Fermer tous les fichiers ouverts
+    Dim key As Variant
+    For Each key In fileDict.Keys
+        Close #fileDict(key)
+    Next key
+    
+    wx.Rows("2:" & wx.Rows.Count).ClearContents
+    
+    MsgBox nbExport & " ligne(s) sauvegardée(s) dans les fichiers mensuels.", vbInformation
+
+End Sub
+
+Private Sub cmb_Terminer_Click()
+
+    Dim fileNameCSV As String
+    Dim ws As Worksheet
+    
+    fileNameCSV = "\\Uf11pu01\EIDS_FLOA_OCTROI\BD DATA OCTROI Rabat26\" & Application.userName & "_2026" & ".csv"
+    
+    Set ws = ThisWorkbook.Worksheets("temp")
+    
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    
+    If currentRow = 0 Then
+        MsgBox "Veuillez d'abord rechercher et sélectionner une ligne à modifier.", vbExclamation
+        Exit Sub
+    End If
+    
+    If cmbSignature.Value = "" Then
+        MsgBox "Veuillez remplir l'activité."
+    ElseIf cmbDecision.Value = "" Then
+        MsgBox "Veuillez sélectionner le produit."
+        Else
+
+    ' Vérification doublon (uniquement refdos maintenant)
+    
+
+    ligne = lastRow + 1
+    
+     With ws
+        .Cells(currentRow, 3).Value = Now
+        .Cells(currentRow, 7).Value = cmbSignature.Value
+        .Cells(currentRow, 8).Value = cmbDecision.Value
+        .Cells(currentRow, 9).Value = comment.Value
+        .Cells(currentRow, 10).Value = .Cells(currentRow, 3).Value - .Cells(currentRow, 2).Value
+    End With
+
+    Call log_Etape2
+    
+    Call clearform
+    
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    
+    vue.ColumnCount = 9
+    
+    Dim rng1 As Range
+    Dim MyArray1
+    vue.List = ws.Range("A2:I" & lastRow).Value
+    Set rng1 = ws.Range("A1:I" & ws.Range("A" & ws.Rows.Count).End(xlUp).Row)
+    With Me.vue
+        .BorderStyle = 1
+        .BorderColor = &H80000012
         
-        Fichier = Dir ' Passe au fichier suivant
-    Loop
+        .Clear
+        '.ColumnHeads = True
+        .ColumnCount = rng1.Columns.Count
+        MyArray1 = rng1
+        .List = MyArray1
+        .ColumnWidths = "80;80;80;80;80;80;80;80"
+    End With
+End If
+End Sub
+
+Private Sub cmb_vider_Click()
+    Dim wx As Worksheet
+    Set wx = ThisWorkbook.Worksheets("temp")
+    wx.Rows("2:" & wx.Rows.Count).ClearContents
+    MsgBox "vider avec succes !"
+End Sub
+Private Sub UserForm_Initialize()
+Call StartClock
+End Sub
+Private Sub UserForm_Terminate()
+Call StopClock
+End Sub
+Private Sub UserForm_activate()
+    Me.StartUpPosition = 0
+    Me.Left = Application.Left + (Application.Width - Me.Width) / 2
+    Me.Top = Application.Top + (Application.Height - Me.Height) / 2
     
-    Application.Calculation = xlCalculationAutomatic
-    Application.DisplayAlerts = True
-    Application.ScreenUpdating = True
+    cmbCredit.Clear
+    cmbCredit.AddItem "AUG"
+    cmbCredit.AddItem "OUV"
+        
+    cmbProduits.AddItem "AUG ACC"
+    cmbProduits.AddItem "OUV ACC"
+    cmbProduits.AddItem "AUG PART"
+    cmbProduits.AddItem "OUV PSM"
+    cmbProduits.AddItem "OUV PSM/PSM"
+    cmbProduits.AddItem "OUV PSM d'AUG"
     
-    MsgBox "Copie terminée depuis tous les cofidis.xlsm du dossier !", vbInformation
+    cmbSignature.Clear
+    cmbSignature.AddItem "SE"
+    cmbSignature.AddItem "Papier"
+    
+    cmbDecision.Clear
+    cmbDecision.AddItem "OCA"
+    cmbDecision.AddItem "OCR"
+    cmbDecision.AddItem "OCI"
+    cmbDecision.AddItem "CPP"
+    cmbDecision.AddItem "TDT"
+    
+    cmbTraitement.Clear
+    cmbTraitement.AddItem "OCAOCR"
+    cmbTraitement.AddItem "ETUDEINC"
+    cmbTraitement.AddItem "SOLVA"
+    
+    'agent
+    agent.Value = "Bonjour " & Application.userName
+    
+End Sub
+Private Sub cmb_Ajouter_Click()
+    Dim ws As Worksheet
+Dim ligne As Long
+Dim refValue As String
+Dim lastRow As Long
+Dim i As Long
+
+Set ws = ThisWorkbook.Worksheets("temp")
+
+' Valeur tapée dans la textbox refdos
+refValue = txtDossier.Value
+
+' Vérifier si refvide
+If Trim(refValue) = "" Then
+    MsgBox "Veuillez saisir une référence dossier.", vbExclamation
+    Exit Sub
+End If
+
+For i = 2 To lastRow
+        If ws.Cells(i, 3).Value = refValue Then
+            MsgBox "La référence dossier '" & refValue & "' existe déjà !", vbCritical
+            Exit Sub
+        End If
+    Next i
+
+' Dernière ligne remplie
+lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+
+' Vérification de doublon dans colonne 6
+For i = 2 To lastRow
+    If ws.Cells(i, 6).Value = refValue And ws.Cells(i, 4).Value = typecredit Then
+        MsgBox "? La référence dossier '" & refValue & "' existe déjà !", vbCritical, "Doublon détecté"
+        Exit Sub
+    End If
+Next i
+
+' Si aucun doublon alors ajouter la ligne
+ligne = lastRow + 1
+
+With ws
+    .Cells(ligne, 1).Value = Environ("USERNAME")
+    .Cells(ligne, 2).Value = Now
+    .Cells(ligne, 4).Value = cmbCredit.Value
+    .Cells(ligne, 5).Value = cmbProduits.Value
+    .Cells(ligne, 6).Value = txtDossier.Value
+End With
+
+Call log_Etape1
+
+' Réinitialisation des champs
+cmbCredit.Value = ""
+cmbProduits.Value = ""
+txtDossier.Value = ""
+cmbSignature.Value = ""
+cmbDecision.Value = ""
+comment.Value = ""
+
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    
+    vue.ColumnCount = 9
+    
+    Dim rng1 As Range
+    Dim MyArray1
+    vue.List = ws.Range("A2:I" & lastRow).Value
+    Set rng1 = ws.Range("A1:I" & ws.Range("A" & ws.Rows.Count).End(xlUp).Row)
+    With Me.vue
+        .BorderStyle = 1
+        .BorderColor = &H80000012
+        
+        .Clear
+        '.ColumnHeads = True
+        .ColumnCount = rng1.Columns.Count
+        MyArray1 = rng1
+        .List = MyArray1
+        .ColumnWidths = "80;80;80;80;80;80;80;80"
+    End With
+
+MsgBox "Dossier ajouté avec succès !", vbInformation
+
+End Sub
+Private Sub recherche_Sign_Click()
+    SearchData_Sign
+End Sub
+Private Sub recherche_Cred_Click()
+    SearchData_Cred
+End Sub
+Private Sub recherche_Ref_Click()
+    SearchData_REF
+End Sub
+Sub SearchData_REF()
+
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Worksheets("temp")
+
+    vue.Clear
+    vue.ColumnWidths = "80;80;80;80;80;80;80;80"
+    vue.ColumnHeads = True
+    
+    If ws.Cells(2, 1).Value = "" Then
+        MsgBox "Aucune donnée trouvée.", vbInformation
+        Exit Sub
+    End If
+
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    
+    vue.ColumnCount = 9
+    
+    Dim searchContract As String
+    searchContract = InputBox("Entrez la référence dossier :", "Recherche")
+
+    Dim i As Long
+    
+    If searchContract = "" Then
+        vue.List = ws.Range("A2:I" & lastRow).Value
+        Set rng1 = ws.Range("A1:I" & ws.Range("A" & ws.Rows.Count).End(xlUp).Row)
+        With Me.vue
+            .BorderStyle = 1
+            .BorderColor = &H80000012
+            
+            .Clear
+        '.ColumnHeads = True
+            .ColumnCount = rng1.Columns.Count
+            MyArray1 = rng1
+            .List = MyArray1
+            .ColumnWidths = "80;80;80;80;80;80;80;80"
+        End With
+        Exit Sub
+    End If
+    
+    Dim results As Collection
+    Set results = New Collection
+    
+    For i = 2 To lastRow
+        If InStr(1, ws.Cells(i, 6).Value, searchContract, vbTextCompare) > 0 Then
+            results.Add i
+        End If
+    Next i
+    
+    If results.Count = 0 Then
+        MsgBox "Aucun dossier trouvé.", vbInformation
+        Exit Sub
+    End If
+    
+    Dim arr()
+    ReDim arr(1 To results.Count, 1 To 9)
+    
+    For i = 1 To results.Count
+        arr(i, 1) = ws.Cells(results(i), 1).Value
+        arr(i, 2) = ws.Cells(results(i), 2).Value
+        arr(i, 3) = ws.Cells(results(i), 3).Value
+        arr(i, 4) = ws.Cells(results(i), 4).Value
+        arr(i, 5) = ws.Cells(results(i), 5).Value
+        arr(i, 6) = ws.Cells(results(i), 6).Value
+        arr(i, 7) = ws.Cells(results(i), 7).Value
+        arr(i, 8) = ws.Cells(results(i), 8).Value
+        arr(i, 9) = ws.Cells(results(i), 9).Value
+    Next i
+
+    vue.List = arr
+
+End Sub
+Sub SearchData_Cred()
+
+        Dim ws As Worksheet
+    Set ws = ThisWorkbook.Worksheets("temp")
+
+    vue.Clear
+    vue.ColumnWidths = "80;80;80;80;80;80;80;80"
+    vue.ColumnHeads = True
+    
+    If ws.Cells(2, 1).Value = "" Then
+        MsgBox "Aucune donnée trouvée.", vbInformation
+        Exit Sub
+    End If
+
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    
+    vue.ColumnCount = 9
+    
+    Dim searchContract As String
+    searchContract = InputBox("Entrez la référence dossier :", "Recherche")
+
+    Dim i As Long
+    
+    If searchContract = "" Then
+        vue.List = ws.Range("A2:I" & lastRow).Value
+        Set rng1 = ws.Range("A1:I" & ws.Range("A" & ws.Rows.Count).End(xlUp).Row)
+        With Me.vue
+            .BorderStyle = 1
+            .BorderColor = &H80000012
+            
+            .Clear
+        '.ColumnHeads = True
+            .ColumnCount = rng1.Columns.Count
+            MyArray1 = rng1
+            .List = MyArray1
+            .ColumnWidths = "80;80;80;80;80;80;80;80"
+        End With
+        Exit Sub
+    End If
+    
+    Dim results As Collection
+    Set results = New Collection
+    
+    For i = 2 To lastRow
+        If InStr(1, ws.Cells(i, 4).Value, searchContract, vbTextCompare) > 0 Then
+            results.Add i
+        End If
+    Next i
+    
+    If results.Count = 0 Then
+        MsgBox "Aucun dossier trouvé.", vbInformation
+        Exit Sub
+    End If
+    
+    Dim arr()
+    ReDim arr(1 To results.Count, 1 To 9)
+    
+    For i = 1 To results.Count
+        arr(i, 1) = ws.Cells(results(i), 1).Value
+        arr(i, 2) = ws.Cells(results(i), 2).Value
+        arr(i, 3) = ws.Cells(results(i), 3).Value
+        arr(i, 4) = ws.Cells(results(i), 4).Value
+        arr(i, 5) = ws.Cells(results(i), 5).Value
+        arr(i, 6) = ws.Cells(results(i), 6).Value
+        arr(i, 7) = ws.Cells(results(i), 7).Value
+        arr(i, 8) = ws.Cells(results(i), 8).Value
+        arr(i, 9) = ws.Cells(results(i), 9).Value
+    Next i
+
+    vue.List = arr
+End Sub
+Sub SearchData_Sign()
+
+        Dim ws As Worksheet
+    Set ws = ThisWorkbook.Worksheets("temp")
+
+    vue.Clear
+    vue.ColumnWidths = "80;80;80;80;80;80;80;80"
+    vue.ColumnHeads = True
+    
+    If ws.Cells(2, 1).Value = "" Then
+        MsgBox "Aucune donnée trouvée.", vbInformation
+        Exit Sub
+    End If
+
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    
+    vue.ColumnCount = 9
+    
+    Dim searchContract As String
+    searchContract = InputBox("Entrez la référence dossier :", "Recherche")
+
+    Dim i As Long
+    
+    If searchContract = "" Then
+        vue.List = ws.Range("A2:I" & lastRow).Value
+        Set rng1 = ws.Range("A1:I" & ws.Range("A" & ws.Rows.Count).End(xlUp).Row)
+        With Me.vue
+            .BorderStyle = 1
+            .BorderColor = &H80000012
+            
+            .Clear
+        '.ColumnHeads = True
+            .ColumnCount = rng1.Columns.Count
+            MyArray1 = rng1
+            .List = MyArray1
+            .ColumnWidths = "80;80;80;80;80;80;80;80"
+        End With
+        Exit Sub
+    End If
+    
+    Dim results As Collection
+    Set results = New Collection
+    
+    For i = 2 To lastRow
+        If InStr(1, ws.Cells(i, 7).Value, searchContract, vbTextCompare) > 0 Then
+            results.Add i
+        End If
+    Next i
+    
+    If results.Count = 0 Then
+        MsgBox "Aucun dossier trouvé.", vbInformation
+        Exit Sub
+    End If
+    
+    Dim arr()
+    ReDim arr(1 To results.Count, 1 To 9)
+    
+    For i = 1 To results.Count
+        arr(i, 1) = ws.Cells(results(i), 1).Value
+        arr(i, 2) = ws.Cells(results(i), 2).Value
+        arr(i, 3) = ws.Cells(results(i), 3).Value
+        arr(i, 4) = ws.Cells(results(i), 4).Value
+        arr(i, 5) = ws.Cells(results(i), 5).Value
+        arr(i, 6) = ws.Cells(results(i), 6).Value
+        arr(i, 7) = ws.Cells(results(i), 7).Value
+        arr(i, 8) = ws.Cells(results(i), 8).Value
+        arr(i, 9) = ws.Cells(results(i), 9).Value
+    Next i
+
+    vue.List = arr
+
+End Sub
+
+Private Sub vue_Click()
+    If vue.ListIndex >= 0 Then LoadSelectedData
+End Sub
+Sub LoadSelectedData()
+
+    If vue.ListIndex < 0 Then Exit Sub
+    
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Worksheets("temp")
+    
+    Dim valueContrat As String
+    valueContrat = vue.List(vue.ListIndex, 1)
+
+    Dim lastRow As Long, i As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    
+    For i = 2 To lastRow
+        If ws.Cells(i, 2).Value = valueContrat Then
+            currentRow = i
+            Exit For
+        End If
+    Next i
+    
+    With ws
+        cmbCredit.Value = .Cells(i, 4).Value
+        cmbProduits.Value = .Cells(i, 5).Value
+        txtDossier.Value = .Cells(i, 6).Value
+        cmbSignature.Value = .Cells(i, 7).Value
+        cmbDecision.Value = .Cells(i, 8).Value
+        comment.Value = .Cells(i, 9).Value
+    End With
+
+    isEditing = True
+
+End Sub
+Sub log_Etape1()
+    Dim wx As Worksheet
+    
+    Set wx = ThisWorkbook.Worksheets("extraction")
+    lastRow = wx.Cells(wx.Rows.Count, 1).End(xlUp).Row
+    ligne = lastRow + 1
+    With wx
+        .Cells(ligne, 1).Value = Environ("USERNAME")
+        .Cells(ligne, 2).Value = Now
+        .Cells(ligne, 4).Value = cmbCredit.Value
+        .Cells(ligne, 5).Value = cmbProduits.Value
+        .Cells(ligne, 6).Value = txtDossier.Value
+    End With
+End Sub
+Sub log_Etape2()
+    Dim wx As Worksheet
+    
+    Set wx = ThisWorkbook.Worksheets("extraction")
+    lastRow = wx.Cells(wx.Rows.Count, 1).End(xlUp).Row
+    
+    ligne = lastRow + 1
+    
+    With wx
+        .Cells(currentRow, 3).Value = Now
+        .Cells(currentRow, 7).Value = cmbSignature.Value
+        .Cells(currentRow, 8).Value = cmbDecision.Value
+        .Cells(currentRow, 9).Value = comment.Value
+        .Cells(currentRow, 10).Value = .Cells(currentRow, 3).Value - .Cells(currentRow, 2).Value
+    End With
+End Sub
+Sub clearform()
+    cmbCredit.Value = ""
+    cmbProduits.Value = ""
+    txtDossier.Value = ""
+    cmbSignature.Value = ""
+    cmbDecision.Value = ""
+    comment.Value = ""
 End Sub
