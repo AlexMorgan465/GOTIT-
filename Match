@@ -31,7 +31,7 @@ Private Sub cmb_Sauvegarder_Click()
 
     For i = 2 To lastRow
         
-        ligneDate = wx.Cells(i, 2).Value ' colonne B
+        ligneDate = wx.Cells(i, 3).Value ' colonne C
         
         If ligneDate <> "" Then
             
@@ -62,7 +62,8 @@ Private Sub cmb_Sauvegarder_Click()
                        wx.Cells(i, 7).Value & ";" & _
                        wx.Cells(i, 8).Value & ";" & _
                        wx.Cells(i, 9).Value & ";" & _
-                       wx.Cells(i, 10).Value
+                       wx.Cells(i, 10).Value & ";" & _
+                       wx.Cells(i, 11).Value
             
             Print #fileNum, ligneCSV
             nbExport = nbExport + 1
@@ -77,7 +78,7 @@ Private Sub cmb_Sauvegarder_Click()
         Close #fileDict(key)
     Next key
     
-    wx.Rows("2:" & wx.Rows.Count).ClearContents
+    wx.Rows("3:" & wx.Rows.Count).ClearContents
     
     MsgBox nbExport & " ligne(s) sauvegardée(s) dans les fichiers mensuels.", vbInformation
 
@@ -111,11 +112,11 @@ Private Sub cmb_Terminer_Click()
     ligne = lastRow + 1
     
      With ws
-        .Cells(currentRow, 3).Value = Now
-        .Cells(currentRow, 7).Value = cmbSignature.Value
-        .Cells(currentRow, 8).Value = cmbDecision.Value
-        .Cells(currentRow, 9).Value = comment.Value
-        .Cells(currentRow, 10).Value = .Cells(currentRow, 3).Value - .Cells(currentRow, 2).Value
+        .Cells(currentRow, 4).Value = Now
+        .Cells(currentRow, 8).Value = cmbSignature.Value
+        .Cells(currentRow, 9).Value = cmbDecision.Value
+        .Cells(currentRow, 10).Value = comment.Value
+        .Cells(currentRow, 11).Value = .Cells(currentRow, 4).Value - .Cells(currentRow, 3).Value
     End With
 
     Call log_Etape2
@@ -124,7 +125,7 @@ Private Sub cmb_Terminer_Click()
     
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
     
-    vue.ColumnCount = 9
+    vue.ColumnCount = 10
     
     Dim rng1 As Range
     Dim MyArray1
@@ -150,6 +151,39 @@ Private Sub cmb_vider_Click()
     wx.Rows("2:" & wx.Rows.Count).ClearContents
     MsgBox "vider avec succes !"
 End Sub
+
+Private Sub CommandButton1_Click()
+    
+ If cmbTraitement.Value = "OCAOCR" Or cmbTraitement.Value = "ETUDEINC" Then
+        
+        Solvabilité.Visible = False
+        Label11.Visible = False
+        cmbType.Visible = False
+        cmbDecisionSolva.Visible = False
+        
+        Label8.Visible = True
+        Label4.Visible = True
+        Label7.Visible = True
+        cmbCredit.Visible = True
+        cmbProduits.Visible = True
+        cmbSignature.Visible = True
+        cmbDecision.Visible = True
+        
+    ElseIf cmbTraitement.Value = "SOLVA" Then
+        cmbCredit.Visible = False
+        cmbProduits.Visible = False
+        cmbSignature.Visible = False
+        cmbDecision.Visible = False
+        Label4.Visible = False
+        Label7.Visible = False
+        Label8.Visible = False
+        
+        cmbDecisionSolva.Visible = True
+        cmbType.Visible = True
+        Solvabilité.Visible = True
+        Label11.Visible = True
+    End If
+End Sub
 Private Sub UserForm_Initialize()
 Call StartClock
 End Sub
@@ -160,6 +194,19 @@ Private Sub UserForm_activate()
     Me.StartUpPosition = 0
     Me.Left = Application.Left + (Application.Width - Me.Width) / 2
     Me.Top = Application.Top + (Application.Height - Me.Height) / 2
+    
+    cmbTraitement.Clear
+    cmbTraitement.AddItem "OCAOCR"
+    cmbTraitement.AddItem "ETUDEINC"
+    cmbTraitement.AddItem "SOLVA"
+
+    cmbDecisionSolva.Clear
+    cmbDecisionSolva.AddItem "OK"
+    cmbDecisionSolva.AddItem "KO"
+    
+    cmbType.Clear
+    cmbType.AddItem "GRILLE"
+    cmbType.AddItem "WEB"
     
     cmbCredit.Clear
     cmbCredit.AddItem "AUG"
@@ -182,18 +229,13 @@ Private Sub UserForm_activate()
     cmbDecision.AddItem "OCI"
     cmbDecision.AddItem "CPP"
     cmbDecision.AddItem "TDT"
-    
-    cmbTraitement.Clear
-    cmbTraitement.AddItem "OCAOCR"
-    cmbTraitement.AddItem "ETUDEINC"
-    cmbTraitement.AddItem "SOLVA"
-    
+
     'agent
     agent.Value = "Bonjour " & Application.userName
     
 End Sub
 Private Sub cmb_Ajouter_Click()
-    Dim ws As Worksheet
+Dim ws As Worksheet
 Dim ligne As Long
 Dim refValue As String
 Dim lastRow As Long
@@ -233,10 +275,11 @@ ligne = lastRow + 1
 
 With ws
     .Cells(ligne, 1).Value = Environ("USERNAME")
-    .Cells(ligne, 2).Value = Now
-    .Cells(ligne, 4).Value = cmbCredit.Value
-    .Cells(ligne, 5).Value = cmbProduits.Value
-    .Cells(ligne, 6).Value = txtDossier.Value
+    .Cells(ligne, 2).Value = cmbTraitement.Value
+    .Cells(ligne, 3).Value = Now
+    .Cells(ligne, 5).Value = cmbCredit.Value
+    .Cells(ligne, 6).Value = cmbProduits.Value
+    .Cells(ligne, 7).Value = txtDossier.Value
 End With
 
 Call log_Etape1
@@ -251,7 +294,7 @@ comment.Value = ""
 
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
     
-    vue.ColumnCount = 9
+    vue.ColumnCount = 10
     
     Dim rng1 As Range
     Dim MyArray1
@@ -269,6 +312,7 @@ comment.Value = ""
         .ColumnWidths = "80;80;80;80;80;80;80;80"
     End With
 
+
 MsgBox "Dossier ajouté avec succès !", vbInformation
 
 End Sub
@@ -280,6 +324,9 @@ Private Sub recherche_Cred_Click()
 End Sub
 Private Sub recherche_Ref_Click()
     SearchData_REF
+End Sub
+Private Sub recherche_Type_Click()
+    SearchData_Type
 End Sub
 Sub SearchData_REF()
 
@@ -298,152 +345,7 @@ Sub SearchData_REF()
     Dim lastRow As Long
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
     
-    vue.ColumnCount = 9
-    
-    Dim searchContract As String
-    searchContract = InputBox("Entrez la référence dossier :", "Recherche")
-
-    Dim i As Long
-    
-    If searchContract = "" Then
-        vue.List = ws.Range("A2:I" & lastRow).Value
-        Set rng1 = ws.Range("A1:I" & ws.Range("A" & ws.Rows.Count).End(xlUp).Row)
-        With Me.vue
-            .BorderStyle = 1
-            .BorderColor = &H80000012
-            
-            .Clear
-        '.ColumnHeads = True
-            .ColumnCount = rng1.Columns.Count
-            MyArray1 = rng1
-            .List = MyArray1
-            .ColumnWidths = "80;80;80;80;80;80;80;80"
-        End With
-        Exit Sub
-    End If
-    
-    Dim results As Collection
-    Set results = New Collection
-    
-    For i = 2 To lastRow
-        If InStr(1, ws.Cells(i, 6).Value, searchContract, vbTextCompare) > 0 Then
-            results.Add i
-        End If
-    Next i
-    
-    If results.Count = 0 Then
-        MsgBox "Aucun dossier trouvé.", vbInformation
-        Exit Sub
-    End If
-    
-    Dim arr()
-    ReDim arr(1 To results.Count, 1 To 9)
-    
-    For i = 1 To results.Count
-        arr(i, 1) = ws.Cells(results(i), 1).Value
-        arr(i, 2) = ws.Cells(results(i), 2).Value
-        arr(i, 3) = ws.Cells(results(i), 3).Value
-        arr(i, 4) = ws.Cells(results(i), 4).Value
-        arr(i, 5) = ws.Cells(results(i), 5).Value
-        arr(i, 6) = ws.Cells(results(i), 6).Value
-        arr(i, 7) = ws.Cells(results(i), 7).Value
-        arr(i, 8) = ws.Cells(results(i), 8).Value
-        arr(i, 9) = ws.Cells(results(i), 9).Value
-    Next i
-
-    vue.List = arr
-
-End Sub
-Sub SearchData_Cred()
-
-        Dim ws As Worksheet
-    Set ws = ThisWorkbook.Worksheets("temp")
-
-    vue.Clear
-    vue.ColumnWidths = "80;80;80;80;80;80;80;80"
-    vue.ColumnHeads = True
-    
-    If ws.Cells(2, 1).Value = "" Then
-        MsgBox "Aucune donnée trouvée.", vbInformation
-        Exit Sub
-    End If
-
-    Dim lastRow As Long
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
-    
-    vue.ColumnCount = 9
-    
-    Dim searchContract As String
-    searchContract = InputBox("Entrez la référence dossier :", "Recherche")
-
-    Dim i As Long
-    
-    If searchContract = "" Then
-        vue.List = ws.Range("A2:I" & lastRow).Value
-        Set rng1 = ws.Range("A1:I" & ws.Range("A" & ws.Rows.Count).End(xlUp).Row)
-        With Me.vue
-            .BorderStyle = 1
-            .BorderColor = &H80000012
-            
-            .Clear
-        '.ColumnHeads = True
-            .ColumnCount = rng1.Columns.Count
-            MyArray1 = rng1
-            .List = MyArray1
-            .ColumnWidths = "80;80;80;80;80;80;80;80"
-        End With
-        Exit Sub
-    End If
-    
-    Dim results As Collection
-    Set results = New Collection
-    
-    For i = 2 To lastRow
-        If InStr(1, ws.Cells(i, 4).Value, searchContract, vbTextCompare) > 0 Then
-            results.Add i
-        End If
-    Next i
-    
-    If results.Count = 0 Then
-        MsgBox "Aucun dossier trouvé.", vbInformation
-        Exit Sub
-    End If
-    
-    Dim arr()
-    ReDim arr(1 To results.Count, 1 To 9)
-    
-    For i = 1 To results.Count
-        arr(i, 1) = ws.Cells(results(i), 1).Value
-        arr(i, 2) = ws.Cells(results(i), 2).Value
-        arr(i, 3) = ws.Cells(results(i), 3).Value
-        arr(i, 4) = ws.Cells(results(i), 4).Value
-        arr(i, 5) = ws.Cells(results(i), 5).Value
-        arr(i, 6) = ws.Cells(results(i), 6).Value
-        arr(i, 7) = ws.Cells(results(i), 7).Value
-        arr(i, 8) = ws.Cells(results(i), 8).Value
-        arr(i, 9) = ws.Cells(results(i), 9).Value
-    Next i
-
-    vue.List = arr
-End Sub
-Sub SearchData_Sign()
-
-        Dim ws As Worksheet
-    Set ws = ThisWorkbook.Worksheets("temp")
-
-    vue.Clear
-    vue.ColumnWidths = "80;80;80;80;80;80;80;80"
-    vue.ColumnHeads = True
-    
-    If ws.Cells(2, 1).Value = "" Then
-        MsgBox "Aucune donnée trouvée.", vbInformation
-        Exit Sub
-    End If
-
-    Dim lastRow As Long
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
-    
-    vue.ColumnCount = 9
+    vue.ColumnCount = 10
     
     Dim searchContract As String
     searchContract = InputBox("Entrez la référence dossier :", "Recherche")
@@ -499,16 +401,235 @@ Sub SearchData_Sign()
     vue.List = arr
 
 End Sub
+Sub SearchData_Cred()
+
+        Dim ws As Worksheet
+    Set ws = ThisWorkbook.Worksheets("temp")
+
+    vue.Clear
+    vue.ColumnWidths = "80;80;80;80;80;80;80;80"
+    vue.ColumnHeads = True
+    
+    If ws.Cells(2, 1).Value = "" Then
+        MsgBox "Aucune donnée trouvée.", vbInformation
+        Exit Sub
+    End If
+
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    
+    vue.ColumnCount = 10
+    
+    Dim searchContract As String
+    searchContract = InputBox("Entrez la référence dossier :", "Recherche")
+
+    Dim i As Long
+    
+    If searchContract = "" Then
+        vue.List = ws.Range("A2:I" & lastRow).Value
+        Set rng1 = ws.Range("A1:I" & ws.Range("A" & ws.Rows.Count).End(xlUp).Row)
+        With Me.vue
+            .BorderStyle = 1
+            .BorderColor = &H80000012
+            
+            .Clear
+        '.ColumnHeads = True
+            .ColumnCount = rng1.Columns.Count
+            MyArray1 = rng1
+            .List = MyArray1
+            .ColumnWidths = "80;80;80;80;80;80;80;80"
+        End With
+        Exit Sub
+    End If
+    
+    Dim results As Collection
+    Set results = New Collection
+    
+    For i = 2 To lastRow
+        If InStr(1, ws.Cells(i, 5).Value, searchContract, vbTextCompare) > 0 Then
+            results.Add i
+        End If
+    Next i
+    
+    If results.Count = 0 Then
+        MsgBox "Aucun dossier trouvé.", vbInformation
+        Exit Sub
+    End If
+    
+    Dim arr()
+    ReDim arr(1 To results.Count, 1 To 9)
+    
+    For i = 1 To results.Count
+        arr(i, 1) = ws.Cells(results(i), 1).Value
+        arr(i, 2) = ws.Cells(results(i), 2).Value
+        arr(i, 3) = ws.Cells(results(i), 3).Value
+        arr(i, 4) = ws.Cells(results(i), 4).Value
+        arr(i, 5) = ws.Cells(results(i), 5).Value
+        arr(i, 6) = ws.Cells(results(i), 6).Value
+        arr(i, 7) = ws.Cells(results(i), 7).Value
+        arr(i, 8) = ws.Cells(results(i), 8).Value
+        arr(i, 9) = ws.Cells(results(i), 9).Value
+    Next i
+
+    vue.List = arr
+End Sub
+Sub SearchData_Type()
+
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Worksheets("temp")
+
+    vue.Clear
+    vue.ColumnWidths = "80;80;80;80;80;80;80;80"
+    vue.ColumnHeads = True
+    
+    If ws.Cells(2, 1).Value = "" Then
+        MsgBox "Aucune donnée trouvée.", vbInformation
+        Exit Sub
+    End If
+
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    
+    vue.ColumnCount = 10
+    
+    Dim searchContract As String
+    searchContract = InputBox("Entrez la référence dossier :", "Recherche")
+
+    Dim i As Long
+    
+    If searchContract = "" Then
+        vue.List = ws.Range("A2:I" & lastRow).Value
+        Set rng1 = ws.Range("A1:I" & ws.Range("A" & ws.Rows.Count).End(xlUp).Row)
+        With Me.vue
+            .BorderStyle = 1
+            .BorderColor = &H80000012
+            
+            .Clear
+        '.ColumnHeads = True
+            .ColumnCount = rng1.Columns.Count
+            MyArray1 = rng1
+            .List = MyArray1
+            .ColumnWidths = "80;80;80;80;80;80;80;80"
+        End With
+        Exit Sub
+    End If
+    
+    Dim results As Collection
+    Set results = New Collection
+    
+    For i = 2 To lastRow
+        If InStr(1, ws.Cells(i, 2).Value, searchContract, vbTextCompare) > 0 Then
+            results.Add i
+        End If
+    Next i
+    
+    If results.Count = 0 Then
+        MsgBox "Aucun dossier trouvé.", vbInformation
+        Exit Sub
+    End If
+    
+    Dim arr()
+    ReDim arr(1 To results.Count, 1 To 9)
+    
+    For i = 1 To results.Count
+        arr(i, 1) = ws.Cells(results(i), 1).Value
+        arr(i, 2) = ws.Cells(results(i), 2).Value
+        arr(i, 3) = ws.Cells(results(i), 3).Value
+        arr(i, 4) = ws.Cells(results(i), 4).Value
+        arr(i, 5) = ws.Cells(results(i), 5).Value
+        arr(i, 6) = ws.Cells(results(i), 6).Value
+        arr(i, 7) = ws.Cells(results(i), 7).Value
+        arr(i, 8) = ws.Cells(results(i), 8).Value
+        arr(i, 9) = ws.Cells(results(i), 9).Value
+    Next i
+
+    vue.List = arr
+
+End Sub
+
+Sub SearchData_Sign()
+
+        Dim ws As Worksheet
+    Set ws = ThisWorkbook.Worksheets("temp")
+
+    vue.Clear
+    vue.ColumnWidths = "80;80;80;80;80;80;80;80"
+    vue.ColumnHeads = True
+    
+    If ws.Cells(2, 1).Value = "" Then
+        MsgBox "Aucune donnée trouvée.", vbInformation
+        Exit Sub
+    End If
+
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    
+    vue.ColumnCount = 10
+    
+    Dim searchContract As String
+    searchContract = InputBox("Entrez la référence dossier :", "Recherche")
+
+    Dim i As Long
+    
+    If searchContract = "" Then
+        vue.List = ws.Range("A2:I" & lastRow).Value
+        Set rng1 = ws.Range("A1:I" & ws.Range("A" & ws.Rows.Count).End(xlUp).Row)
+        With Me.vue
+            .BorderStyle = 1
+            .BorderColor = &H80000012
+            
+            .Clear
+        '.ColumnHeads = True
+            .ColumnCount = rng1.Columns.Count
+            MyArray1 = rng1
+            .List = MyArray1
+            .ColumnWidths = "80;80;80;80;80;80;80;80"
+        End With
+        Exit Sub
+    End If
+    
+    Dim results As Collection
+    Set results = New Collection
+    
+    For i = 2 To lastRow
+        If InStr(1, ws.Cells(i, 8).Value, searchContract, vbTextCompare) > 0 Then
+            results.Add i
+        End If
+    Next i
+    
+    If results.Count = 0 Then
+        MsgBox "Aucun dossier trouvé.", vbInformation
+        Exit Sub
+    End If
+    
+    Dim arr()
+    ReDim arr(1 To results.Count, 1 To 9)
+    
+    For i = 1 To results.Count
+        arr(i, 1) = ws.Cells(results(i), 1).Value
+        arr(i, 2) = ws.Cells(results(i), 2).Value
+        arr(i, 3) = ws.Cells(results(i), 3).Value
+        arr(i, 4) = ws.Cells(results(i), 4).Value
+        arr(i, 5) = ws.Cells(results(i), 5).Value
+        arr(i, 6) = ws.Cells(results(i), 6).Value
+        arr(i, 7) = ws.Cells(results(i), 7).Value
+        arr(i, 8) = ws.Cells(results(i), 8).Value
+        arr(i, 9) = ws.Cells(results(i), 9).Value
+    Next i
+
+    vue.List = arr
+
+End Sub
 
 Private Sub vue_Click()
     If vue.ListIndex >= 0 Then LoadSelectedData
 End Sub
 Sub LoadSelectedData()
-
-    If vue.ListIndex < 0 Then Exit Sub
     
     Dim ws As Worksheet
     Set ws = ThisWorkbook.Worksheets("temp")
+    
+    If vue.ListIndex < 0 Then Exit Sub
     
     Dim valueContrat As String
     valueContrat = vue.List(vue.ListIndex, 1)
@@ -524,12 +645,12 @@ Sub LoadSelectedData()
     Next i
     
     With ws
-        cmbCredit.Value = .Cells(i, 4).Value
-        cmbProduits.Value = .Cells(i, 5).Value
-        txtDossier.Value = .Cells(i, 6).Value
-        cmbSignature.Value = .Cells(i, 7).Value
-        cmbDecision.Value = .Cells(i, 8).Value
-        comment.Value = .Cells(i, 9).Value
+        cmbCredit.Value = .Cells(i, 5).Value
+        cmbProduits.Value = .Cells(i, 6).Value
+        txtDossier.Value = .Cells(i, 7).Value
+        cmbSignature.Value = .Cells(i, 8).Value
+        cmbDecision.Value = .Cells(i, 9).Value
+        comment.Value = .Cells(i, 10).Value
     End With
 
     isEditing = True
@@ -543,11 +664,26 @@ Sub log_Etape1()
     ligne = lastRow + 1
     With wx
         .Cells(ligne, 1).Value = Environ("USERNAME")
-        .Cells(ligne, 2).Value = Now
-        .Cells(ligne, 4).Value = cmbCredit.Value
-        .Cells(ligne, 5).Value = cmbProduits.Value
-        .Cells(ligne, 6).Value = txtDossier.Value
+        .Cells(ligne, 2).Value = cmbTraitement.Value
+        .Cells(ligne, 3).Value = Now
+        .Cells(ligne, 5).Value = cmbCredit.Value
+        .Cells(ligne, 6).Value = cmbProduits.Value
+        .Cells(ligne, 7).Value = txtDossier.Value
     End With
+End Sub
+Sub logSolva_Etape1()
+    Dim wx As Worksheet
+    
+    Set wx = ThisWorkbook.Worksheets("extraction_solva")
+    lastRow = wx.Cells(wx.Rows.Count, 1).End(xlUp).Row
+    ligne = lastRow + 1
+With wx
+    .Cells(ligne, 1).Value = Environ("USERNAME")
+    .Cells(ligne, 2).Value = cmbTraitement.Value
+    .Cells(ligne, 3).Value = Now
+    .Cells(ligne, 5).Value = Solvabilité.Value
+    .Cells(ligne, 6).Value = txtDossier.Value
+End With
 End Sub
 Sub log_Etape2()
     Dim wx As Worksheet
@@ -558,11 +694,11 @@ Sub log_Etape2()
     ligne = lastRow + 1
     
     With wx
-        .Cells(currentRow, 3).Value = Now
-        .Cells(currentRow, 7).Value = cmbSignature.Value
-        .Cells(currentRow, 8).Value = cmbDecision.Value
-        .Cells(currentRow, 9).Value = comment.Value
-        .Cells(currentRow, 10).Value = .Cells(currentRow, 3).Value - .Cells(currentRow, 2).Value
+        .Cells(currentRow, 4).Value = Now
+        .Cells(currentRow, 8).Value = cmbSignature.Value
+        .Cells(currentRow, 9).Value = cmbDecision.Value
+        .Cells(currentRow, 10).Value = comment.Value
+        .Cells(currentRow, 11).Value = .Cells(currentRow, 4).Value - .Cells(currentRow, 3).Value
     End With
 End Sub
 Sub clearform()
