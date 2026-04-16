@@ -1,110 +1,96 @@
-Option Explicit
-Dim fso As Object
-Const CHEMIN_RACINE As String = "\\deks\task"
-
-Private Sub UserForm_Initialize()
-    Set fso = CreateObject("Scripting.FileSystemObject")
-    
-    If Not fso.FolderExists(CHEMIN_RACINE) Then
-        MsgBox "Chemin introuvable : " & CHEMIN_RACINE, vbCritical
-        Exit Sub
-    End If
-    
-    ChargerDossiersNiveau1
-End Sub
-
-' Niveau 1 : dossiers de \\deks\task
-Private Sub ChargerDossiersNiveau1()
-    Dim DossierRacine As Object, SousDossier As Object
-    Set DossierRacine = fso.GetFolder(CHEMIN_RACINE)
-    
-    Me.ComboBox1.Clear
-    For Each SousDossier In DossierRacine.SubFolders
-        Me.ComboBox1.AddItem SousDossier.Name
-    Next SousDossier
-    
-    If Me.ComboBox1.ListCount > 0 Then Me.ComboBox1.ListIndex = 0
-End Sub
-
-' Quand ComboBox1 change -> charge niveau 2 dans ComboBox2
-Private Sub ComboBox1_Change()
-    Dim CheminNiv1 As String
-    Dim DossierNiv1 As Object, SousDossier As Object
-    
-    Me.ComboBox2.Clear
-    Me.ComboBox3.Clear
-    Me.ListBox1.Clear
-    
-    If Me.ComboBox1.Value = "" Then Exit Sub
-    
-    CheminNiv1 = CHEMIN_RACINE & "\" & Me.ComboBox1.Value
-    
-    If fso.FolderExists(CheminNiv1) Then
-        Set DossierNiv1 = fso.GetFolder(CheminNiv1)
-        For Each SousDossier In DossierNiv1.SubFolders
-            Me.ComboBox2.AddItem SousDossier.Name
-        Next SousDossier
-        
-        If Me.ComboBox2.ListCount > 0 Then Me.ComboBox2.ListIndex = 0
-    End If
-End Sub
-
-' Quand ComboBox2 change -> charge niveau 3 dans ComboBox3
-Private Sub ComboBox2_Change()
-    Dim CheminNiv2 As String
-    Dim DossierNiv2 As Object, SousDossier As Object
-    
-    Me.ComboBox3.Clear
-    Me.ListBox1.Clear
-    
-    If Me.ComboBox1.Value = "" Or Me.ComboBox2.Value = "" Then Exit Sub
-    
-    CheminNiv2 = CHEMIN_RACINE & "\" & Me.ComboBox1.Value & "\" & Me.ComboBox2.Value
-    
-    If fso.FolderExists(CheminNiv2) Then
-        Set DossierNiv2 = fso.GetFolder(CheminNiv2)
-        For Each SousDossier In DossierNiv2.SubFolders
-            Me.ComboBox3.AddItem SousDossier.Name
-        Next SousDossier
-        
-        If Me.ComboBox3.ListCount > 0 Then Me.ComboBox3.ListIndex = 0
-    End If
-End Sub
-
-' Bouton : affiche les fichiers du niveau 3 sélectionné
-Private Sub CommandButton1_Click()
-    Dim CheminComplet As String
-    Dim Dossier As Object, Fichier As Object
-    
-    Me.ListBox1.Clear
-    
-    If Me.ComboBox1.Value = "" Or Me.ComboBox2.Value = "" Or Me.ComboBox3.Value = "" Then
-        MsgBox "Sélectionne les 3 niveaux de dossier", vbExclamation
-        Exit Sub
-    End If
-    
-    CheminComplet = CHEMIN_RACINE & "\" & Me.ComboBox1.Value & "\" & Me.ComboBox2.Value & "\" & Me.ComboBox3.Value
-    
-    If Not fso.FolderExists(CheminComplet) Then
-        MsgBox "Dossier introuvable", vbCritical
-        Exit Sub
-    End If
-    
-    Set Dossier = fso.GetFolder(CheminComplet)
-    
-    If Dossier.Files.Count = 0 Then
-        Me.ListBox1.AddItem "Aucun fichier dans ce dossier"
-    Else
-        For Each Fichier In Dossier.Files
-            Me.ListBox1.AddItem Fichier.Name
-        Next Fichier
-    End If
-End Sub
-
-Private Sub ComboBox3_Change()
-    Me.ListBox1.Clear ' Vide la liste si on change le niveau 3
-End Sub
-
-Private Sub UserForm_Terminate()
-    Set fso = Nothing
-End Sub
+PS C:\Users\HAMDANMO\Desktop\Accessibilité> tree
+Structure du dossier pour le volume Windows
+Le numéro de série du volume est D4ED-82A9
+C:.
+├───ACM
+│   ├───A TRAITER
+│   │   ├───Assurances-Biens
+│   │   ├───Assurances-Emprunteurs
+│   │   ├───Assurances-Personnes-Collectif
+│   │   ├───Assurances-Personnes-Individuelle
+│   │   ├───Assurances-Vie
+│   │   ├───Comptabilité-Contentieux
+│   │   ├───Décisionnel
+│   │   ├───Indemnisation-Biens-Personnes
+│   │   └───Protection-Juridique
+│   ├───EN COURS
+│   │   ├───Assurances-Biens
+│   │   ├───Assurances-Emprunteurs
+│   │   ├───Assurances-Personnes-Collectif
+│   │   ├───Assurances-Personnes-Individuelle
+│   │   ├───Assurances-Vie
+│   │   ├───Comptabilité-Contentieux
+│   │   ├───Décisionnel
+│   │   ├───Indemnisation-Biens-Personnes
+│   │   └───Protection-Juridique
+│   ├───NON CONFORME
+│   │   ├───Assurances-Biens
+│   │   ├───Assurances-Emprunteurs
+│   │   ├───Assurances-Personnes-Collectif
+│   │   ├───Assurances-Personnes-Individuelle
+│   │   ├───Assurances-Vie
+│   │   ├───Comptabilité-Contentieux
+│   │   ├───Décisionnel
+│   │   ├───Indemnisation-Biens-Personnes
+│   │   └───Protection-Juridique
+│   └───TRAITES
+│       ├───Assurances-Biens
+│       │   └───Nouveau dossier
+│       ├───Assurances-Emprunteurs
+│       ├───Assurances-Personnes-Collectif
+│       ├───Assurances-Personnes-Individuelle
+│       ├───Assurances-Vie
+│       ├───Comptabilité-Contentieux
+│       ├───Décisionnel
+│       ├───Indemnisation-Biens-Personnes
+│       └───Protection-Juridique
+├───Bouygues telecom
+│   ├───A TRAITER
+│   ├───EN COURS
+│   ├───NON CONFORME
+│   └───TRAITES
+├───CIC CIB ASSET SERVICING
+│   ├───A TRAITER
+│   ├───EN COURS
+│   ├───NON CONFORME
+│   └───TRAITES
+├───CONTRATHEQUE
+│   ├───CONDITIONS GENERALES
+│   │   ├───A TRAITER
+│   │   ├───EN COURS
+│   │   ├───NON CONFORME
+│   │   └───TRAITES
+│   ├───DOCUMENT D'INFORMATION TARIFAIRE
+│   │   ├───A TRAITER
+│   │   ├───EN COURS
+│   │   ├───NON CONFORME
+│   │   └───TRAITES
+│   ├───GARANTIES
+│   │   ├───A TRAITER
+│   │   ├───EN COURS
+│   │   ├───NON CONFORME
+│   │   └───TRAITES
+│   └───POLITIQUE DE PROTECTION
+│       ├───A TRAITER
+│       ├───EN COURS
+│       ├───NON CONFORME
+│       └───TRAITES
+└───DIRCO
+    ├───CIC
+    │   └───FICHES CLIENTS
+    │       ├───A TRAITER
+    │       ├───EN COURS
+    │       ├───NON CONFORME
+    │       └───TRAITES
+    ├───CM
+    │   └───FICHES CLIENTS
+    │       ├───A TRAITER
+    │       ├───EN COURS
+    │       ├───NON CONFORME
+    │       └───TRAITES
+    └───OLD
+        └───FICHES CLIENTS
+            ├───A TRAITER
+            ├───EN COURS
+            ├───NON CONFORME
+            └───TRAITES
