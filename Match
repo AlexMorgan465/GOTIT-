@@ -1,96 +1,155 @@
-PS C:\Users\HAMDANMO\Desktop\Accessibilité> tree
-Structure du dossier pour le volume Windows
-Le numéro de série du volume est D4ED-82A9
-C:.
-├───ACM
-│   ├───A TRAITER
-│   │   ├───Assurances-Biens
-│   │   ├───Assurances-Emprunteurs
-│   │   ├───Assurances-Personnes-Collectif
-│   │   ├───Assurances-Personnes-Individuelle
-│   │   ├───Assurances-Vie
-│   │   ├───Comptabilité-Contentieux
-│   │   ├───Décisionnel
-│   │   ├───Indemnisation-Biens-Personnes
-│   │   └───Protection-Juridique
-│   ├───EN COURS
-│   │   ├───Assurances-Biens
-│   │   ├───Assurances-Emprunteurs
-│   │   ├───Assurances-Personnes-Collectif
-│   │   ├───Assurances-Personnes-Individuelle
-│   │   ├───Assurances-Vie
-│   │   ├───Comptabilité-Contentieux
-│   │   ├───Décisionnel
-│   │   ├───Indemnisation-Biens-Personnes
-│   │   └───Protection-Juridique
-│   ├───NON CONFORME
-│   │   ├───Assurances-Biens
-│   │   ├───Assurances-Emprunteurs
-│   │   ├───Assurances-Personnes-Collectif
-│   │   ├───Assurances-Personnes-Individuelle
-│   │   ├───Assurances-Vie
-│   │   ├───Comptabilité-Contentieux
-│   │   ├───Décisionnel
-│   │   ├───Indemnisation-Biens-Personnes
-│   │   └───Protection-Juridique
-│   └───TRAITES
-│       ├───Assurances-Biens
-│       │   └───Nouveau dossier
-│       ├───Assurances-Emprunteurs
-│       ├───Assurances-Personnes-Collectif
-│       ├───Assurances-Personnes-Individuelle
-│       ├───Assurances-Vie
-│       ├───Comptabilité-Contentieux
-│       ├───Décisionnel
-│       ├───Indemnisation-Biens-Personnes
-│       └───Protection-Juridique
-├───Bouygues telecom
-│   ├───A TRAITER
-│   ├───EN COURS
-│   ├───NON CONFORME
-│   └───TRAITES
-├───CIC CIB ASSET SERVICING
-│   ├───A TRAITER
-│   ├───EN COURS
-│   ├───NON CONFORME
-│   └───TRAITES
-├───CONTRATHEQUE
-│   ├───CONDITIONS GENERALES
-│   │   ├───A TRAITER
-│   │   ├───EN COURS
-│   │   ├───NON CONFORME
-│   │   └───TRAITES
-│   ├───DOCUMENT D'INFORMATION TARIFAIRE
-│   │   ├───A TRAITER
-│   │   ├───EN COURS
-│   │   ├───NON CONFORME
-│   │   └───TRAITES
-│   ├───GARANTIES
-│   │   ├───A TRAITER
-│   │   ├───EN COURS
-│   │   ├───NON CONFORME
-│   │   └───TRAITES
-│   └───POLITIQUE DE PROTECTION
-│       ├───A TRAITER
-│       ├───EN COURS
-│       ├───NON CONFORME
-│       └───TRAITES
-└───DIRCO
-    ├───CIC
-    │   └───FICHES CLIENTS
-    │       ├───A TRAITER
-    │       ├───EN COURS
-    │       ├───NON CONFORME
-    │       └───TRAITES
-    ├───CM
-    │   └───FICHES CLIENTS
-    │       ├───A TRAITER
-    │       ├───EN COURS
-    │       ├───NON CONFORME
-    │       └───TRAITES
-    └───OLD
-        └───FICHES CLIENTS
-            ├───A TRAITER
-            ├───EN COURS
-            ├───NON CONFORME
-            └───TRAITES
+Option Explicit
+
+Dim fso As Object
+
+Sub InitFSO()
+    If fso Is Nothing Then
+        Set fso = CreateObject("Scripting.FileSystemObject")
+    End If
+End Sub
+
+' ==============================
+' 🔍 LISTER FICHIERS
+' ==============================
+Sub ListerFichiers()
+
+    Dim basePath As String
+    Dim row As Long
+    
+    InitFSO
+    
+    basePath = "C:\Users\HAMDANMO\Desktop\Accessibilité\"
+    
+    Cells.Clear
+    Cells(1, 1) = "Chemin"
+    Cells(1, 2) = "Fichier"
+    Cells(1, 3) = "Statut"
+    
+    row = 2
+    
+    Call ParcourirDossier(basePath, row)
+    
+    MsgBox "Chargement terminé"
+    
+End Sub
+
+Sub ParcourirDossier(path As String, ByRef row As Long)
+
+    Dim folder As Object
+    Dim subFolder As Object
+    Dim file As Object
+    
+    Set folder = fso.GetFolder(path)
+    
+    For Each file In folder.Files
+        Cells(row, 1) = path
+        Cells(row, 2) = file.Name
+        Cells(row, 3) = ExtraireStatut(path)
+        row = row + 1
+    Next
+    
+    For Each subFolder In folder.SubFolders
+        ParcourirDossier subFolder.Path, row
+    Next
+    
+End Sub
+
+Function ExtraireStatut(path As String) As String
+
+    If InStr(path, "A TRAITER") > 0 Then
+        ExtraireStatut = "A TRAITER"
+    ElseIf InStr(path, "EN COURS") > 0 Then
+        ExtraireStatut = "EN COURS"
+    ElseIf InStr(path, "TRAITES") > 0 Then
+        ExtraireStatut = "TRAITES"
+    ElseIf InStr(path, "NON CONFORME") > 0 Then
+        ExtraireStatut = "NON CONFORME"
+    Else
+        ExtraireStatut = ""
+    End If
+
+End Function
+
+' ==============================
+' 🚀 DEPLACEMENT FICHIER
+' ==============================
+Sub DeplacerFichier()
+
+    Dim chemin As String
+    Dim fichier As String
+    Dim statut As String
+    Dim nouveauStatut As String
+    
+    Dim newPath As String
+    
+    InitFSO
+    
+    ' ligne sélectionnée
+    chemin = Cells(ActiveCell.Row, 1)
+    fichier = Cells(ActiveCell.Row, 2)
+    statut = Cells(ActiveCell.Row, 3)
+    
+    ' logique workflow
+    If statut = "A TRAITER" Then
+        nouveauStatut = "EN COURS"
+    ElseIf statut = "EN COURS" Then
+        
+        If MsgBox("Traité ?", vbYesNo) = vbYes Then
+            nouveauStatut = "TRAITES"
+        Else
+            nouveauStatut = "NON CONFORME"
+        End If
+        
+    Else
+        MsgBox "Déplacement non autorisé"
+        Exit Sub
+    End If
+    
+    ' remplacement du statut dans le chemin
+    newPath = Replace(chemin, statut, nouveauStatut)
+    
+    ' 🔥 CAS SPECIAL TRAITES / NON CONFORME
+    If nouveauStatut = "TRAITES" Or nouveauStatut = "NON CONFORME" Then
+        newPath = TrouverSousDossier(newPath)
+    End If
+    
+    ' création dossier si inexistant
+    If Not fso.FolderExists(newPath) Then
+        fso.CreateFolder newPath
+    End If
+    
+    ' déplacement
+    fso.MoveFile chemin & "\" & fichier, newPath & "\" & fichier
+    
+    MsgBox "Fichier déplacé vers : " & nouveauStatut
+    
+End Sub
+
+' ==============================
+' 📁 TROUVER SOUS DOSSIER
+' ==============================
+Function TrouverSousDossier(path As String) As String
+
+    Dim folder As Object
+    Dim subFolder As Object
+    
+    Set folder = fso.GetFolder(path)
+    
+    For Each subFolder In folder.SubFolders
+        
+        ' ignorer dossiers PDF / Word
+        If Not (InStr(LCase(subFolder.Name), "pdf") > 0 _
+            Or InStr(LCase(subFolder.Name), "word") > 0 _
+            Or InStr(LCase(subFolder.Name), "doc") > 0) Then
+            
+            TrouverSousDossier = subFolder.Path
+            Exit Function
+            
+        End If
+        
+    Next
+    
+    ' si aucun trouvé → rester dossier principal
+    TrouverSousDossier = path
+
+End Function
