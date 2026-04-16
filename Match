@@ -2,7 +2,6 @@ Option Explicit
 Dim fso As Object
 Const CHEMIN_RACINE As String = "C:\Users\HAMDANMO\Desktop\Accessibilité"
 
-
 Private Sub UserForm_Initialize()
     Set fso = CreateObject("Scripting.FileSystemObject")
     
@@ -28,13 +27,19 @@ End Sub
 Private Sub ComboBox1_From_Change(): RemplirComboBox 2, "From": End Sub
 Private Sub ComboBox2_From_Change(): RemplirComboBox 3, "From": End Sub
 Private Sub ComboBox3_From_Change(): RemplirComboBox 4, "From": End Sub
-Private Sub ComboBox4_From_Change(): AfficherFichiers "From": End Sub
+Private Sub ComboBox4_From_Change()
+    ' Vide seulement la liste, n'affiche pas automatiquement
+    Me.ListBox_from.Clear
+End Sub
 
 ' === EVENEMENTS GROUPE TO ===
 Private Sub ComboBox1_To_Change(): RemplirComboBox 2, "To": End Sub
 Private Sub ComboBox2_To_Change(): RemplirComboBox 3, "To": End Sub
 Private Sub ComboBox3_To_Change(): RemplirComboBox 4, "To": End Sub
-Private Sub ComboBox4_To_Change(): AfficherFichiers "To": End Sub
+Private Sub ComboBox4_To_Change()
+    ' Vide seulement la liste, n'affiche pas automatiquement
+    Me.ListBox_To.Clear
+End Sub
 
 Private Sub RemplirComboBox(Niveau As Integer, Groupe As String)
     Dim Chemin As String, Dossier As Object, SousDossier As Object
@@ -64,7 +69,9 @@ Private Sub RemplirComboBox(Niveau As Integer, Groupe As String)
     For Each SousDossier In Dossier.SubFolders
         CbxCible.AddItem SousDossier.Name
     Next SousDossier
-    If CbxCible.ListCount > 0 Then CbxCible.ListIndex = 0 Else AfficherFichiers Groupe
+    
+    ' Sélectionne le premier sous-dossier s'il existe, mais n'affiche pas les fichiers
+    If CbxCible.ListCount > 0 Then CbxCible.ListIndex = 0
 End Sub
 
 Private Sub AfficherFichiers(Groupe As String)
@@ -101,14 +108,47 @@ Private Function ConstruireChemin(Groupe As String, NiveauMax As Integer) As Str
     ConstruireChemin = Chemin
 End Function
 
-' BOUTON DEPLACER TOUS LES FICHIERS
-' BOUTON DEPLACER LE FICHIER SELECTIONNE
+' === BOUTONS D'AFFICHAGE MANUEL ===
+Private Sub CommandButton_AfficherFrom_Click()
+    Dim CheminFrom As String
+    CheminFrom = ConstruireChemin("From", 4)
+    
+    If CheminFrom = "" Then
+        MsgBox "Sélectionne d'abord tous les niveaux du dossier source", vbExclamation
+        Exit Sub
+    End If
+    
+    If Not fso.FolderExists(CheminFrom) Then
+        MsgBox "Dossier source introuvable", vbCritical
+        Exit Sub
+    End If
+    
+    AfficherFichiers "From"
+End Sub
+
+Private Sub CommandButton_AfficherTo_Click()
+    Dim CheminTo As String
+    CheminTo = ConstruireChemin("To", 4)
+    
+    If CheminTo = "" Then
+        MsgBox "Sélectionne d'abord tous les niveaux du dossier destination", vbExclamation
+        Exit Sub
+    End If
+    
+    If Not fso.FolderExists(CheminTo) Then
+        MsgBox "Dossier destination introuvable", vbCritical
+        Exit Sub
+    End If
+    
+    AfficherFichiers "To"
+End Sub
+
+' === BOUTON DEPLACER LE FICHIER SELECTIONNE ===
 Private Sub CommandButton_Deplacer_Click()
     Dim CheminFrom As String, CheminTo As String
     Dim NomFichier As String, CheminFichierComplet As String
     Dim Rep As VbMsgBoxResult
     
-    ' Vérifie qu'un fichier est sélectionné dans la ListBox source
     If Me.ListBox_from.ListIndex = -1 Then
         MsgBox "Sélectionne d'abord un fichier dans la liste source", vbExclamation
         Exit Sub
@@ -144,7 +184,6 @@ Private Sub CommandButton_Deplacer_Click()
     
     On Error GoTo ErreurMove
     
-    ' Vérifie si le fichier existe déjà dans la destination
     If fso.FileExists(CheminTo & "\" & NomFichier) Then
         Rep = MsgBox("Le fichier existe déjà dans la destination." & vbCrLf & _
                      "Veux-tu l'écraser ?", vbYesNo + vbExclamation)
@@ -156,7 +195,7 @@ Private Sub CommandButton_Deplacer_Click()
     
     MsgBox "Fichier déplacé avec succès !", vbInformation
     
-    ' Rafraîchit les 2 ListBox
+    ' Rafraîchit les deux listes après déplacement
     AfficherFichiers "From"
     AfficherFichiers "To"
     Exit Sub
@@ -168,4 +207,3 @@ End Sub
 Private Sub UserForm_Terminate()
     Set fso = Nothing
 End Sub
-
