@@ -13,7 +13,7 @@ Private Sub UserForm_Initialize()
     ChargerDossiersNiveau1
 End Sub
 
-' Charge les dossiers de niveau 1 dans ComboBox1
+' Niveau 1 : dossiers de \\deks\task
 Private Sub ChargerDossiersNiveau1()
     Dim DossierRacine As Object, SousDossier As Object
     Set DossierRacine = fso.GetFolder(CHEMIN_RACINE)
@@ -26,12 +26,13 @@ Private Sub ChargerDossiersNiveau1()
     If Me.ComboBox1.ListCount > 0 Then Me.ComboBox1.ListIndex = 0
 End Sub
 
-' Quand on change le dossier niveau 1, on charge ses sous-dossiers dans ComboBox2
+' Quand ComboBox1 change -> charge niveau 2 dans ComboBox2
 Private Sub ComboBox1_Change()
     Dim CheminNiv1 As String
     Dim DossierNiv1 As Object, SousDossier As Object
     
     Me.ComboBox2.Clear
+    Me.ComboBox3.Clear
     Me.ListBox1.Clear
     
     If Me.ComboBox1.Value = "" Then Exit Sub
@@ -48,19 +49,41 @@ Private Sub ComboBox1_Change()
     End If
 End Sub
 
-' Bouton : affiche les fichiers du sous-dossier sélectionné
+' Quand ComboBox2 change -> charge niveau 3 dans ComboBox3
+Private Sub ComboBox2_Change()
+    Dim CheminNiv2 As String
+    Dim DossierNiv2 As Object, SousDossier As Object
+    
+    Me.ComboBox3.Clear
+    Me.ListBox1.Clear
+    
+    If Me.ComboBox1.Value = "" Or Me.ComboBox2.Value = "" Then Exit Sub
+    
+    CheminNiv2 = CHEMIN_RACINE & "\" & Me.ComboBox1.Value & "\" & Me.ComboBox2.Value
+    
+    If fso.FolderExists(CheminNiv2) Then
+        Set DossierNiv2 = fso.GetFolder(CheminNiv2)
+        For Each SousDossier In DossierNiv2.SubFolders
+            Me.ComboBox3.AddItem SousDossier.Name
+        Next SousDossier
+        
+        If Me.ComboBox3.ListCount > 0 Then Me.ComboBox3.ListIndex = 0
+    End If
+End Sub
+
+' Bouton : affiche les fichiers du niveau 3 sélectionné
 Private Sub CommandButton1_Click()
     Dim CheminComplet As String
     Dim Dossier As Object, Fichier As Object
     
     Me.ListBox1.Clear
     
-    If Me.ComboBox1.Value = "" Or Me.ComboBox2.Value = "" Then
-        MsgBox "Sélectionne un dossier et un sous-dossier", vbExclamation
+    If Me.ComboBox1.Value = "" Or Me.ComboBox2.Value = "" Or Me.ComboBox3.Value = "" Then
+        MsgBox "Sélectionne les 3 niveaux de dossier", vbExclamation
         Exit Sub
     End If
     
-    CheminComplet = CHEMIN_RACINE & "\" & Me.ComboBox1.Value & "\" & Me.ComboBox2.Value
+    CheminComplet = CHEMIN_RACINE & "\" & Me.ComboBox1.Value & "\" & Me.ComboBox2.Value & "\" & Me.ComboBox3.Value
     
     If Not fso.FolderExists(CheminComplet) Then
         MsgBox "Dossier introuvable", vbCritical
@@ -76,6 +99,10 @@ Private Sub CommandButton1_Click()
             Me.ListBox1.AddItem Fichier.Name
         Next Fichier
     End If
+End Sub
+
+Private Sub ComboBox3_Change()
+    Me.ListBox1.Clear ' Vide la liste si on change le niveau 3
 End Sub
 
 Private Sub UserForm_Terminate()
