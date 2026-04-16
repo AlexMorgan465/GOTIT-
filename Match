@@ -10,113 +10,144 @@ Private Sub UserForm_Initialize()
         Exit Sub
     End If
     
-    ChargerNiveau1
+    ChargerNiveau1 Me.ComboBox1_From
+    ChargerNiveau1 Me.ComboBox1_To
 End Sub
 
-' Niveau 1 : ACM, Bouygues telecom, CIC CIB..., CONTRATHEQUE, DIRCO
-Private Sub ChargerNiveau1()
+Private Sub ChargerNiveau1(Cbx As MSForms.ComboBox)
     Dim DossierRacine As Object, SousDossier As Object
     Set DossierRacine = fso.GetFolder(CHEMIN_RACINE)
-    
-    Me.ComboBox1.Clear
+    Cbx.Clear
     For Each SousDossier In DossierRacine.SubFolders
-        Me.ComboBox1.AddItem SousDossier.Name
+        Cbx.AddItem SousDossier.Name
     Next SousDossier
-    
-    If Me.ComboBox1.ListCount > 0 Then Me.ComboBox1.ListIndex = 0
 End Sub
 
-' Niveau 2 : A TRAITER, EN COURS, CONDITIONS GENERALES, CIC, etc
-Private Sub ComboBox1_Change()
-    RemplirComboBox 2
-End Sub
+' === EVENEMENTS GROUPE FROM ===
+Private Sub ComboBox1_From_Change(): RemplirComboBox 2, "From": End Sub
+Private Sub ComboBox2_From_Change(): RemplirComboBox 3, "From": End Sub
+Private Sub ComboBox3_From_Change(): RemplirComboBox 4, "From": End Sub
+Private Sub ComboBox4_From_Change(): AfficherFichiers "From": End Sub
 
-' Niveau 3 : Assurances-Biens, A TRAITER, FICHES CLIENTS, etc
-Private Sub ComboBox2_Change()
-    RemplirComboBox 3
-End Sub
+' === EVENEMENTS GROUPE TO ===
+Private Sub ComboBox1_To_Change(): RemplirComboBox 2, "To": End Sub
+Private Sub ComboBox2_To_Change(): RemplirComboBox 3, "To": End Sub
+Private Sub ComboBox3_To_Change(): RemplirComboBox 4, "To": End Sub
+Private Sub ComboBox4_To_Change(): AfficherFichiers "To": End Sub
 
-' Niveau 4 : Nouveau dossier, A TRAITER, etc
-Private Sub ComboBox3_Change()
-    RemplirComboBox 4
-End Sub
-
-Private Sub ComboBox4_Change()
-    Me.ListBox1.Clear
-End Sub
-
-' Fonction générique pour remplir les ComboBox en cascade
-Private Sub RemplirComboBox(Niveau As Integer)
+Private Sub RemplirComboBox(Niveau As Integer, Groupe As String)
     Dim Chemin As String, Dossier As Object, SousDossier As Object
-    Dim Cbx As MSForms.ComboBox
+    Dim CbxCible As MSForms.ComboBox
     
-    ' Vide les ComboBox suivants
-    Select Case Niveau
-        Case 2: Me.ComboBox2.Clear: Me.ComboBox3.Clear: Me.ComboBox4.Clear: Set Cbx = Me.ComboBox2
-        Case 3: Me.ComboBox3.Clear: Me.ComboBox4.Clear: Set Cbx = Me.ComboBox3
-        Case 4: Me.ComboBox4.Clear: Set Cbx = Me.ComboBox4
-    End Select
-    Me.ListBox1.Clear
+    Chemin = ConstruireChemin(Groupe, Niveau - 1) ' Chemin du niveau précédent
     
-    ' Construit le chemin selon les ComboBox remplies
-    Chemin = CHEMIN_RACINE
-    If Me.ComboBox1.Value <> "" Then Chemin = Chemin & "\" & Me.ComboBox1.Value
-    If Niveau > 2 And Me.ComboBox2.Value <> "" Then Chemin = Chemin & "\" & Me.ComboBox2.Value
-    If Niveau > 3 And Me.ComboBox3.Value <> "" Then Chemin = Chemin & "\" & Me.ComboBox3.Value
-    
-    If Chemin = CHEMIN_RACINE Then Exit Sub
-    
-    If fso.FolderExists(Chemin) Then
-        Set Dossier = fso.GetFolder(Chemin)
-        For Each SousDossier In Dossier.SubFolders
-            Cbx.AddItem SousDossier.Name
-        Next SousDossier
-        If Cbx.ListCount > 0 Then Cbx.ListIndex = 0
+    If Groupe = "From" Then
+        Select Case Niveau
+            Case 2: Me.ComboBox2_From.Clear: Me.ComboBox3_From.Clear: Me.ComboBox4_From.Clear: Set CbxCible = Me.ComboBox2_From
+            Case 3: Me.ComboBox3_From.Clear: Me.ComboBox4_From.Clear: Set CbxCible = Me.ComboBox3_From
+            Case 4: Me.ComboBox4_From.Clear: Set CbxCible = Me.ComboBox4_From
+        End Select
+        Me.ListBox_From.Clear
+    Else
+        Select Case Niveau
+            Case 2: Me.ComboBox2_To.Clear: Me.ComboBox3_To.Clear: Me.ComboBox4_To.Clear: Set CbxCible = Me.ComboBox2_To
+            Case 3: Me.ComboBox3_To.Clear: Me.ComboBox4_To.Clear: Set CbxCible = Me.ComboBox3_To
+            Case 4: Me.ComboBox4_To.Clear: Set CbxCible = Me.ComboBox4_To
+        End Select
+        Me.ListBox_To.Clear
     End If
+    
+    If Chemin = "" Or Not fso.FolderExists(Chemin) Then Exit Sub
+    
+    Set Dossier = fso.GetFolder(Chemin)
+    For Each SousDossier In Dossier.SubFolders
+        CbxCible.AddItem SousDossier.Name
+    Next SousDossier
+    If CbxCible.ListCount > 0 Then CbxCible.ListIndex = 0 Else AfficherFichiers Groupe
 End Sub
 
-' Bouton : affiche les fichiers du dernier dossier sélectionné
-Private Sub CommandButton1_Click()
-    Dim CheminComplet As String
-    Dim Dossier As Object, Fichier As Object
+Private Sub AfficherFichiers(Groupe As String)
+    Dim Chemin As String, Dossier As Object, Fichier As Object, Lbx As MSForms.ListBox
+    Chemin = ConstruireChemin(Groupe, 4)
+    If Groupe = "From" Then Set Lbx = Me.ListBox_From Else Set Lbx = Me.ListBox_To
+    Lbx.Clear
     
-    Me.ListBox1.Clear
+    If Chemin = "" Or Not fso.FolderExists(Chemin) Then Exit Sub
     
-    ' Construit le chemin avec tous les niveaux remplis
-    CheminComplet = CHEMIN_RACINE
-    If Me.ComboBox1.Value = "" Then GoTo ErreurSelection
-    CheminComplet = CheminComplet & "\" & Me.ComboBox1.Value
+    Set Dossier = fso.GetFolder(Chemin)
+    For Each Fichier In Dossier.Files
+        Lbx.AddItem Fichier.Name
+    Next Fichier
+End Sub
+
+' Construit le chemin jusqu'au niveau demandé
+Private Function ConstruireChemin(Groupe As String, NiveauMax As Integer) As String
+    Dim Chemin As String
+    Chemin = CHEMIN_RACINE
     
-    If Me.ComboBox2.Value <> "" Then CheminComplet = CheminComplet & "\" & Me.ComboBox2.Value
-    If Me.ComboBox3.Value <> "" Then CheminComplet = CheminComplet & "\" & Me.ComboBox3.Value
-    If Me.ComboBox4.Value <> "" Then CheminComplet = CheminComplet & "\" & Me.ComboBox4.Value
-    
-    If Not fso.FolderExists(CheminComplet) Then
-        MsgBox "Dossier introuvable", vbCritical
-        Exit Sub
-    End If
-    
-    Set Dossier = fso.GetFolder(CheminComplet)
-    
-    ' Si le dossier a des sous-dossiers, on prévient
-    If Dossier.SubFolders.Count > 0 And Dossier.Files.Count = 0 Then
-        Me.ListBox1.AddItem ">>> Ce dossier contient des sous-dossiers, pas de fichiers directs"
-        Me.ListBox1.AddItem ">>> Sélectionne un niveau plus bas"
-        Exit Sub
-    End If
-    
-    If Dossier.Files.Count = 0 Then
-        Me.ListBox1.AddItem "Aucun fichier dans : " & Dossier.Name
+    If Groupe = "From" Then
+        If NiveauMax >= 1 And Me.ComboBox1_From.Value <> "" Then Chemin = Chemin & "\" & Me.ComboBox1_From.Value Else Exit Function
+        If NiveauMax >= 2 And Me.ComboBox2_From.Value <> "" Then Chemin = Chemin & "\" & Me.ComboBox2_From.Value Else ConstruireChemin = Chemin: Exit Function
+        If NiveauMax >= 3 And Me.ComboBox3_From.Value <> "" Then Chemin = Chemin & "\" & Me.ComboBox3_From.Value Else ConstruireChemin = Chemin: Exit Function
+        If NiveauMax >= 4 And Me.ComboBox4_From.Value <> "" Then Chemin = Chemin & "\" & Me.ComboBox4_From.Value
     Else
-        Me.ListBox1.AddItem "=== Fichiers dans " & Dossier.Path & " ==="
-        For Each Fichier In Dossier.Files
-            Me.ListBox1.AddItem Fichier.Name
-        Next Fichier
+        If NiveauMax >= 1 And Me.ComboBox1_To.Value <> "" Then Chemin = Chemin & "\" & Me.ComboBox1_To.Value Else Exit Function
+        If NiveauMax >= 2 And Me.ComboBox2_To.Value <> "" Then Chemin = Chemin & "\" & Me.ComboBox2_To.Value Else ConstruireChemin = Chemin: Exit Function
+        If NiveauMax >= 3 And Me.ComboBox3_To.Value <> "" Then Chemin = Chemin & "\" & Me.ComboBox3_To.Value Else ConstruireChemin = Chemin: Exit Function
+        If NiveauMax >= 4 And Me.ComboBox4_To.Value <> "" Then Chemin = Chemin & "\" & Me.ComboBox4_To.Value
     End If
-    Exit Sub
     
-ErreurSelection:
-    MsgBox "Sélectionne au moins le niveau 1", vbExclamation
+    ConstruireChemin = Chemin
+End Function
+
+' BOUTON DEPLACER TOUS LES FICHIERS
+Private Sub CommandButton_Deplacer_Click()
+    Dim CheminFrom As String, CheminTo As String
+    Dim DossierFrom As Object, Fichier As Object
+    Dim NbFichiers As Long, Rep As VbMsgBoxResult, FichiersDeplaces As Long
+    
+    CheminFrom = ConstruireChemin("From", 4)
+    CheminTo = ConstruireChemin("To", 4)
+    
+    If CheminFrom = "" Or CheminTo = "" Then
+        MsgBox "Sélectionne le dossier source ET destination", vbExclamation
+        Exit Sub
+    End If
+    
+    If CheminFrom = CheminTo Then
+        MsgBox "Source et destination identiques", vbExclamation
+        Exit Sub
+    End If
+    
+    Set DossierFrom = fso.GetFolder(CheminFrom)
+    NbFichiers = DossierFrom.Files.Count
+    
+    If NbFichiers = 0 Then
+        MsgBox "Aucun fichier à déplacer dans la source", vbInformation
+        Exit Sub
+    End If
+    
+    Rep = MsgBox("Déplacer " & NbFichiers & " fichier(s) ?" & vbCrLf & _
+                 "De : " & CheminFrom & vbCrLf & _
+                 "Vers : " & CheminTo, vbYesNo + vbQuestion)
+    
+    If Rep = vbNo Then Exit Sub
+    
+    Application.ScreenUpdating = False
+    On Error Resume Next
+    
+    For Each Fichier In DossierFrom.Files
+        fso.MoveFile Fichier.Path, CheminTo & "\"
+        If Err.Number = 0 Then FichiersDeplaces = FichiersDeplaces + 1
+        Err.Clear
+    Next Fichier
+    On Error GoTo 0
+    
+    Application.ScreenUpdating = True
+    MsgBox FichiersDeplaces & " fichier(s) déplacé(s) sur " & NbFichiers, vbInformation
+    
+    AfficherFichiers "From"
+    AfficherFichiers "To"
 End Sub
 
 Private Sub UserForm_Terminate()
