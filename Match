@@ -1,54 +1,246 @@
-' === BOUTON DEPLACER UN DOSSIER VIA SHELL - moins de problèmes de permission ===
-Private Sub CommandButton_DeplacerDossier_Click()
-    Dim CheminDestination As String
-    Dim DossierSource As String
-    Dim NomDossier As String
+Option Explicit
+Dim fso As Object
+Const CHEMIN_RACINE As String = "C:\Users\HAMDANMO\Desktop\Accessibilité"
+
+Private Sub UserForm_Initialize()
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    
+    If Not fso.FolderExists(CHEMIN_RACINE) Then
+        MsgBox "Chemin introuvable : " & CHEMIN_RACINE, vbCritical
+        Exit Sub
+    End If
+    
+    ChargerClients
+End Sub
+
+' Niveau 1 : ACM, Bouygues telecom, etc
+Private Sub ChargerClients()
+    Dim DossierRacine As Object, SousDossier As Object
+    Set DossierRacine = fso.GetFolder(CHEMIN_RACINE)
+    Me.ComboBox_Client.Clear
+    For Each SousDossier In DossierRacine.SubFolders
+        Me.ComboBox_Client.AddItem SousDossier.Name
+    Next SousDossier
+    If Me.ComboBox_Client.ListCount > 0 Then Me.ComboBox_Client.ListIndex = 0
+End Sub
+
+' Niveau 2 : Pour ACM = A TRAITER, EN COURS... Pour CONTRATHEQUE = CONDITIONS GENERALES...
+Private Sub ComboBox_Client_Change()
+    Dim Chemin As String, Dossier As Object, SousDossier As Object
+    Me.ComboBox_Niveau2.Clear: Me.ComboBox_Niveau3.Clear: Me.ListBox_Fichiers.Clear
+    
+    If Me.ComboBox_Client.Value = "" Then Exit Sub
+    Chemin = CHEMIN_RACINE & "\" & Me.ComboBox_Client.Value
+    
+    If fso.FolderExists(Chemin) Then
+        Set Dossier = fso.GetFolder(Chemin)
+        For Each SousDossier In Dossier.SubFolders
+            Me.ComboBox_Niveau2.AddItem SousDossier.Name
+        Next SousDossier
+        If Me.ComboBox_Niveau2.ListCount > 0 Then Me.ComboBox_Niveau2.ListIndex = 0
+    End If
+End Sub
+
+' Niveau 3 : Pour ACM = Assurances-Biens... Pour CONTRATHEQUE = A TRAITER...
+Private Sub ComboBox_Niveau2_Change()
+    Dim Chemin As String, Dossier As Object, SousDossier As Object
+    Me.ComboBox_Niveau3.Clear: Me.ListBox_Fichiers.Clear
+    
+    If Me.ComboBox_Client.Value = "" Or Me.ComboBox_Niveau2.Value = "" Then Exit Sub
+    Chemin = CHEMIN_RACINE & "\" & Me.ComboBox_Client.Value & "\" & Me.ComboBox_Niveau2.Value
+    
+    If fso.FolderExists(Chemin) Then
+        Set Dossier = fso.GetFolder(Chemin)
+        For Each SousDossier In Dossier.SubFolders
+            Me.ComboBox_Niveau3.AddItem SousDossier.Name
+        Next SousDossier
+        If Me.ComboBox_Niveau3.ListCount > 0 Then Me.ComboBox_Niveau3.ListIndex = 0
+    End If
+End Sub
+
+Private Sub ComboBox_Niveau3_Change()
+    Me.ListBox_Fichiers.Clear
+End Sub
+
+' === BOUTON AFFICHER FICHIERS DE "A TRAITER" ===
+Private Sub CommandButton_AfficherATraiter_Click()
+    Dim CheminATraiter As String
+    CheminATraiter = ConstruireCheminStatut("A TRAITER")
+    
+    If CheminATraiter = "" Then
+        MsgBox "Sélectionne le client et les sous-dossiers", vbExclamation
+        Exit Sub
+    End If
+    
+    ChargerFichiers CheminATraiter
+End Sub
+
+' === BOUTON DEPLACER A TRAITER -> EN COURS ===
+Private Sub CommandButton_VersEnCours_Click()
+    DeplacerFichier "A TRAITER", "EN COURS"
+End Sub
+
+' === BOUTON DEPLACER EN COURS -> TRAITES ===
+Private Sub CommandButton_VersTraites_Click()
+    DeplacerFichier "EN COURS", "TRAITES"
+End Sub
+
+' === BOUTON DEPLACER EN COURS -> NON CONFORME ===
+Private Sub CommandButton_VersNonConforme_Click()
+    DeplacerFichier "EN COURS", "NON CONFORME"
+End Sub
+
+' === BOUTON PARCOURIR ET DEPLACER VERS TRAITES OU NON CONFORME ===
+Private Sub CommandButton_ParcourirDeplacer_Click()
+    Dim CheminSource As String, NomFichier As String
+    Dim CheminDestBase As String, CheminDestFinal As String
     Dim Rep As VbMsgBoxResult
-    Dim ShellApp As Object
     
-    CheminDestination = ConstruireChemin("To", 4)
-    If CheminDestination = "" Then
-        MsgBox "Sélectionne d'abord le dossier de destination avec les ComboBox de droite", vbExclamation
-        Exit Sub
-    End If
-    
-    If Not fso.FolderExists(CheminDestination) Then
-        MsgBox "Dossier de destination introuvable", vbCritical
-        Exit Sub
-    End If
-    
-    With Application.FileDialog(msoFileDialogFolderPicker)
-        .Title = "Sélectionne le dossier à déplacer"
+    ' 1. Choisir le fichier source n'importe où
+    With Application.FileDialog(msoFileDialogFilePicker)
+        .Title = "Sélectionne le fichier à déplacer"
         .InitialFileName = Environ("USERPROFILE") & "\Desktop\"
         .AllowMultiSelect = False
         If .Show <> -1 Then Exit Sub
-        DossierSource = .SelectedItems(1)
+        CheminSource = .SelectedItems(1)
     End With
     
-    NomDossier = fso.GetFolder(DossierSource).Name
+    NomFichier = fso.GetFileName(CheminSource)
     
-    Rep = MsgBox("Déplacer ce dossier ?" & vbCrLf & _
-                 NomDossier & vbCrLf & _
-                 "De : " & DossierSource & vbCrLf & _
-                 "Vers : " & CheminDestination, vbYesNo + vbQuestion)
-    
-    If Rep = vbNo Then Exit Sub
-    
-    ' Utilise Shell au lieu de FSO
-    Set ShellApp = CreateObject("Shell.Application")
-    
-    ' Option 4 = pas de barre de progression, 16 = répondre "Oui à tout" pour écraser
-    ShellApp.NameSpace(CheminDestination).MoveHere DossierSource, 4 + 16
-    
-    ' Petit délai pour laisser Windows finir
-    Application.Wait Now + TimeValue("00:00:01")
-    
-    If Not fso.FolderExists(DossierSource) Then
-        MsgBox "Dossier déplacé avec succès !", vbInformation
-        AfficherFichiers "To"
-    Else
-        MsgBox "Le déplacement a échoué. Vérifie que le dossier n'est pas ouvert ailleurs", vbCritical
+    ' 2. Choisir la destination TRAITES ou NON CONFORME selon les ComboBox
+    CheminDestBase = ConstruireCheminBase()
+    If CheminDestBase = "" Then
+        MsgBox "Sélectionne d'abord le client et sous-dossiers dans les ComboBox", vbExclamation
+        Exit Sub
     End If
     
-    Set ShellApp = Nothing
+    ' 3. Demande à l'utilisateur où envoyer
+    Rep = MsgBox("Déplacer vers :" & vbCrLf & _
+                 "Oui = TRAITES" & vbCrLf & _
+                 "Non = NON CONFORME" & vbCrLf & _
+                 "Annuler = Abandonner", vbYesNoCancel + vbQuestion, NomFichier)
+    
+    If Rep = vbCancel Then Exit Sub
+    If Rep = vbYes Then
+        CheminDestFinal = CheminDestBase & "\TRAITES"
+    Else
+        CheminDestFinal = CheminDestBase & "\NON CONFORME"
+    End If
+    
+    If Not fso.FolderExists(CheminDestFinal) Then
+        MsgBox "Le dossier destination n'existe pas : " & CheminDestFinal, vbCritical
+        Exit Sub
+    End If
+    
+    On Error GoTo ErreurParcourir
+    If fso.FileExists(CheminDestFinal & "\" & NomFichier) Then fso.DeleteFile CheminDestFinal & "\" & NomFichier, True
+    fso.MoveFile CheminSource, CheminDestFinal & "\"
+    MsgBox "Fichier déplacé avec succès vers " & fso.GetFileName(CheminDestFinal), vbInformation
+    Exit Sub
+    
+ErreurParcourir:
+    MsgBox "Erreur : " & Err.Description, vbCritical
+End Sub
+
+' === FONCTIONS UTILITAIRES ===
+
+' Construit le chemin de base sans le statut A TRAITER/EN COURS/TRAITES
+Private Function ConstruireCheminBase() As String
+    Dim Chemin As String
+    If Me.ComboBox_Client.Value = "" Then Exit Function
+    Chemin = CHEMIN_RACINE & "\" & Me.ComboBox_Client.Value
+    
+    ' Cas ACM : ACM\Assurances-Biens
+    ' Cas CONTRATHEQUE : CONTRATHEQUE\CONDITIONS GENERALES
+    ' Cas DIRCO : DIRCO\CIC\FICHES CLIENTS
+    If Me.ComboBox_Niveau2.Value <> "" Then Chemin = Chemin & "\" & Me.ComboBox_Niveau2.Value
+    If Me.ComboBox_Niveau3.Value <> "" And Me.ComboBox_Niveau3.Value <> "A TRAITER" _
+       And Me.ComboBox_Niveau3.Value <> "EN COURS" And Me.ComboBox_Niveau3.Value <> "TRAITES" _
+       And Me.ComboBox_Niveau3.Value <> "NON CONFORME" Then
+        Chemin = Chemin & "\" & Me.ComboBox_Niveau3.Value
+    End If
+    
+    ConstruireCheminBase = Chemin
+End Function
+
+' Construit le chemin complet vers A TRAITER ou EN COURS selon la sélection
+Private Function ConstruireCheminStatut(Statut As String) As String
+    Dim CheminBase As String
+    CheminBase = ConstruireCheminBase()
+    If CheminBase = "" Then Exit Function
+    
+    ' Si Niveau3 est déjà un statut, on le remplace
+    If Me.ComboBox_Niveau3.Value = "A TRAITER" Or Me.ComboBox_Niveau3.Value = "EN COURS" _
+       Or Me.ComboBox_Niveau3.Value = "TRAITES" Or Me.ComboBox_Niveau3.Value = "NON CONFORME" Then
+        ConstruireCheminStatut = CheminBase & "\" & Statut
+    Else
+        ' Sinon on ajoute le statut à la fin
+        ConstruireCheminStatut = CheminBase & "\" & Statut
+    End If
+End Function
+
+' Charge les fichiers d'un chemin dans la ListBox
+Private Sub ChargerFichiers(Chemin As String)
+    Dim Dossier As Object, Fichier As Object
+    Me.ListBox_Fichiers.Clear
+    
+    If Not fso.FolderExists(Chemin) Then
+        Me.ListBox_Fichiers.AddItem "Dossier introuvable : " & fso.GetFileName(Chemin)
+        Exit Sub
+    End If
+    
+    Set Dossier = fso.GetFolder(Chemin)
+    If Dossier.Files.Count = 0 Then
+        Me.ListBox_Fichiers.AddItem "Aucun fichier dans " & fso.GetFileName(Chemin)
+    Else
+        For Each Fichier In Dossier.Files
+            Me.ListBox_Fichiers.AddItem Fichier.Name
+        Next Fichier
+    End If
+End Sub
+
+' Déplace le fichier sélectionné d'un statut vers un autre
+Private Sub DeplacerFichier(StatutSource As String, StatutDest As String)
+    Dim CheminSource As String, CheminDest As String, NomFichier As String
+    
+    If Me.ListBox_Fichiers.ListIndex = -1 Then
+        MsgBox "Sélectionne d'abord un fichier dans la liste", vbExclamation
+        Exit Sub
+    End If
+    
+    NomFichier = Me.ListBox_Fichiers.Value
+    If Left(NomFichier, 5) = "Aucun" Or Left(NomFichier, 7) = "Dossier" Then Exit Sub
+    
+    CheminSource = ConstruireCheminStatut(StatutSource)
+    CheminDest = ConstruireCheminStatut(StatutDest)
+    
+    If CheminSource = "" Or CheminDest = "" Then
+        MsgBox "Chemin source ou destination invalide", vbCritical
+        Exit Sub
+    End If
+    
+    If Not fso.FileExists(CheminSource & "\" & NomFichier) Then
+        MsgBox "Fichier source introuvable", vbCritical
+        Exit Sub
+    End If
+    
+    If Not fso.FolderExists(CheminDest) Then
+        MsgBox "Dossier destination introuvable : " & CheminDest, vbCritical
+        Exit Sub
+    End If
+    
+    On Error GoTo ErreurMove
+    If fso.FileExists(CheminDest & "\" & NomFichier) Then fso.DeleteFile CheminDest & "\" & NomFichier, True
+    fso.MoveFile CheminSource & "\" & NomFichier, CheminDest & "\"
+    
+    MsgBox "Fichier déplacé vers " & StatutDest, vbInformation
+    ChargerFichiers CheminSource ' Rafraîchit la liste
+    Exit Sub
+    
+ErreurMove:
+    MsgBox "Erreur : " & Err.Description, vbCritical
+End Sub
+
+Private Sub UserForm_Terminate()
+    Set fso = Nothing
 End Sub
