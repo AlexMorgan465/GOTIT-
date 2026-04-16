@@ -1,60 +1,83 @@
 Option Explicit
+Dim fso As Object
+Const CHEMIN_RACINE As String = "\\deks\task"
 
 Private Sub UserForm_Initialize()
-    ' Lance le scan à l'ouverture du UserForm
-    ListerFichiersDossiersFeuilles "\\deks\task"
-End Sub
-
-Sub ListerFichiersDossiersFeuilles(CheminRacine As String)
-    Dim fso As Object, DossierRacine As Object
-    Dim ColDossiersFeuilles As Collection
-    
     Set fso = CreateObject("Scripting.FileSystemObject")
-    Set ColDossiersFeuilles = New Collection
     
-    If Not fso.FolderExists(CheminRacine) Then
-        MsgBox "Chemin introuvable : " & CheminRacine, vbCritical
+    If Not fso.FolderExists(CHEMIN_RACINE) Then
+        MsgBox "Chemin introuvable : " & CHEMIN_RACINE, vbCritical
         Exit Sub
     End If
     
-    Set DossierRacine = fso.GetFolder(CheminRacine)
-    Me.ListBox1.Clear
-    Me.ListBox1.AddItem "Scan en cours..."
-    
-    ' 1. Trouver tous les dossiers qui n'ont pas de sous-dossiers = dossiers feuilles
-    TrouverDossiersFeuilles DossierRacine, ColDossiersFeuilles
-    
-    ' 2. Lister les fichiers de chaque dossier feuille dans la ListBox
-    Me.ListBox1.Clear
-    If ColDossiersFeuilles.Count = 0 Then
-        Me.ListBox1.AddItem "Aucun dossier feuille trouvé"
-    Else
-        Dim i As Long, Dossier As Object, Fichier As Object
-        For i = 1 To ColDossiersFeuilles.Count
-            Set Dossier = ColDossiersFeuilles(i)
-            Me.ListBox1.AddItem ">>> " & Dossier.Path ' Affiche le nom du dossier
-            For Each Fichier In Dossier.Files
-                Me.ListBox1.AddItem "    " & Fichier.Name ' Indenté pour les fichiers
-            Next Fichier
-        Next i
-    End If
-    
-    Set fso = Nothing
-    Set DossierRacine = Nothing
-    Set ColDossiersFeuilles = Nothing
+    ChargerDossiersNiveau1
 End Sub
 
-' Fonction récursive qui ne garde que les dossiers sans sous-dossiers
-Private Sub TrouverDossiersFeuilles(Dossier As Object, ByRef CollectionResultat As Collection)
-    Dim SousDossier As Object
+' Charge les dossiers de niveau 1 dans ComboBox1
+Private Sub ChargerDossiersNiveau1()
+    Dim DossierRacine As Object, SousDossier As Object
+    Set DossierRacine = fso.GetFolder(CHEMIN_RACINE)
     
-    If Dossier.SubFolders.Count = 0 Then
-        ' C'est un dossier feuille = pas de sous-dossier
-        CollectionResultat.Add Dossier
-    Else
-        ' Sinon on descend dans chaque sous-dossier
-        For Each SousDossier In Dossier.SubFolders
-            TrouverDossiersFeuilles SousDossier, CollectionResultat
+    Me.ComboBox1.Clear
+    For Each SousDossier In DossierRacine.SubFolders
+        Me.ComboBox1.AddItem SousDossier.Name
+    Next SousDossier
+    
+    If Me.ComboBox1.ListCount > 0 Then Me.ComboBox1.ListIndex = 0
+End Sub
+
+' Quand on change le dossier niveau 1, on charge ses sous-dossiers dans ComboBox2
+Private Sub ComboBox1_Change()
+    Dim CheminNiv1 As String
+    Dim DossierNiv1 As Object, SousDossier As Object
+    
+    Me.ComboBox2.Clear
+    Me.ListBox1.Clear
+    
+    If Me.ComboBox1.Value = "" Then Exit Sub
+    
+    CheminNiv1 = CHEMIN_RACINE & "\" & Me.ComboBox1.Value
+    
+    If fso.FolderExists(CheminNiv1) Then
+        Set DossierNiv1 = fso.GetFolder(CheminNiv1)
+        For Each SousDossier In DossierNiv1.SubFolders
+            Me.ComboBox2.AddItem SousDossier.Name
         Next SousDossier
+        
+        If Me.ComboBox2.ListCount > 0 Then Me.ComboBox2.ListIndex = 0
     End If
+End Sub
+
+' Bouton : affiche les fichiers du sous-dossier sélectionné
+Private Sub CommandButton1_Click()
+    Dim CheminComplet As String
+    Dim Dossier As Object, Fichier As Object
+    
+    Me.ListBox1.Clear
+    
+    If Me.ComboBox1.Value = "" Or Me.ComboBox2.Value = "" Then
+        MsgBox "Sélectionne un dossier et un sous-dossier", vbExclamation
+        Exit Sub
+    End If
+    
+    CheminComplet = CHEMIN_RACINE & "\" & Me.ComboBox1.Value & "\" & Me.ComboBox2.Value
+    
+    If Not fso.FolderExists(CheminComplet) Then
+        MsgBox "Dossier introuvable", vbCritical
+        Exit Sub
+    End If
+    
+    Set Dossier = fso.GetFolder(CheminComplet)
+    
+    If Dossier.Files.Count = 0 Then
+        Me.ListBox1.AddItem "Aucun fichier dans ce dossier"
+    Else
+        For Each Fichier In Dossier.Files
+            Me.ListBox1.AddItem Fichier.Name
+        Next Fichier
+    End If
+End Sub
+
+Private Sub UserForm_Terminate()
+    Set fso = Nothing
 End Sub
