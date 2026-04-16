@@ -1,11 +1,11 @@
-' === BOUTON DEPLACER UN DOSSIER DEPUIS LE BUREAU ===
+' === BOUTON DEPLACER UN DOSSIER VIA SHELL - moins de problèmes de permission ===
 Private Sub CommandButton_DeplacerDossier_Click()
     Dim CheminDestination As String
     Dim DossierSource As String
     Dim NomDossier As String
     Dim Rep As VbMsgBoxResult
+    Dim ShellApp As Object
     
-    ' Vérifie que la destination est sélectionnée
     CheminDestination = ConstruireChemin("To", 4)
     If CheminDestination = "" Then
         MsgBox "Sélectionne d'abord le dossier de destination avec les ComboBox de droite", vbExclamation
@@ -17,17 +17,12 @@ Private Sub CommandButton_DeplacerDossier_Click()
         Exit Sub
     End If
     
-    ' Ouvre la fenêtre pour choisir un dossier sur le bureau
     With Application.FileDialog(msoFileDialogFolderPicker)
         .Title = "Sélectionne le dossier à déplacer"
-        .InitialFileName = Environ("USERPROFILE") & "\Desktop\" ' Ouvre directement sur le bureau
+        .InitialFileName = Environ("USERPROFILE") & "\Desktop\"
         .AllowMultiSelect = False
-        
-        If .Show = -1 Then ' Si l'utilisateur a cliqué OK
-            DossierSource = .SelectedItems(1)
-        Else
-            Exit Sub ' Annulé
-        End If
+        If .Show <> -1 Then Exit Sub
+        DossierSource = .SelectedItems(1)
     End With
     
     NomDossier = fso.GetFolder(DossierSource).Name
@@ -35,30 +30,25 @@ Private Sub CommandButton_DeplacerDossier_Click()
     Rep = MsgBox("Déplacer ce dossier ?" & vbCrLf & _
                  NomDossier & vbCrLf & _
                  "De : " & DossierSource & vbCrLf & _
-                 "Vers : " & CheminDestination & "\" & NomDossier, vbYesNo + vbQuestion)
+                 "Vers : " & CheminDestination, vbYesNo + vbQuestion)
     
     If Rep = vbNo Then Exit Sub
     
-    On Error GoTo ErreurMoveDossier
+    ' Utilise Shell au lieu de FSO
+    Set ShellApp = CreateObject("Shell.Application")
     
-    ' Vérifie si un dossier du même nom existe déjà
-    If fso.FolderExists(CheminDestination & "\" & NomDossier) Then
-        Rep = MsgBox("Un dossier '" & NomDossier & "' existe déjà dans la destination." & vbCrLf & _
-                     "Veux-tu l'écraser ?", vbYesNo + vbExclamation)
-        If Rep = vbNo Then Exit Sub
-        fso.DeleteFolder CheminDestination & "\" & NomDossier, True
+    ' Option 4 = pas de barre de progression, 16 = répondre "Oui à tout" pour écraser
+    ShellApp.NameSpace(CheminDestination).MoveHere DossierSource, 4 + 16
+    
+    ' Petit délai pour laisser Windows finir
+    Application.Wait Now + TimeValue("00:00:01")
+    
+    If Not fso.FolderExists(DossierSource) Then
+        MsgBox "Dossier déplacé avec succès !", vbInformation
+        AfficherFichiers "To"
+    Else
+        MsgBox "Le déplacement a échoué. Vérifie que le dossier n'est pas ouvert ailleurs", vbCritical
     End If
     
-    ' Déplace le dossier complet avec tout son contenu
-    fso.MoveFolder DossierSource, CheminDestination & "\"
-    
-    MsgBox "Dossier déplacé avec succès !", vbInformation
-    
-    ' Rafraîchit la liste destination pour voir le nouveau dossier
-    AfficherFichiers "To"
-    Exit Sub
-    
-ErreurMoveDossier:
-    MsgBox "Erreur pendant le déplacement du dossier : " & Err.Description & vbCrLf & _
-           "Vérifie que le dossier n'est pas ouvert dans l'explorateur", vbCritical
+    Set ShellApp = Nothing
 End Sub
