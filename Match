@@ -1,18 +1,63 @@
-Private Sub cmb_Ajouter_Click()
-    ' --- Condition ajoutée : vérifier qu'aucune ligne en attente n'existe ---
-    Dim wsTemp As Worksheet
-    Set wsTemp = GetTempSheet()
+Sub CopierOcaocrDepuisTousCofidis()
+
+    Dim WbDest As Workbook
+    Dim WsDest As Worksheet
+    Dim Dossier As String
     
-    Dim lastRow As Long, i As Long
-    lastRow = wsTemp.Cells(wsTemp.Rows.Count, 1).End(xlUp).Row
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
     
-    For i = 2 To lastRow
-        ' Si la ligne a une heure de début (colonne C) mais pas d'heure de fin (colonne D)
-        If wsTemp.Cells(i, 3).Value <> "" And wsTemp.Cells(i, 4).Value = "" Then
-            MsgBox "Veuillez compléter la ligne précédente (en attente) avant d'ajouter un nouveau dossier.", vbExclamation
-            Exit Sub
+    Set WbDest = ThisWorkbook
+    Set WsDest = WbDest.Sheets("ocaocr")
+    
+    ' Dossier principal
+    Dossier = "\\desktop\vba\"
+    
+    ' Lancer la recherche récursive
+    ParcourirDossiers Dossier, WsDest
+    
+    Application.DisplayAlerts = True
+    Application.ScreenUpdating = True
+    
+    MsgBox "Copie terminée pour tous les fichiers !", vbInformation
+
+End Sub
+
+
+Sub ParcourirDossiers(ByVal Chemin As String, WsDest As Worksheet)
+
+    Dim Fichier As String
+    Dim SousDossier As String
+    Dim WbSource As Workbook
+    Dim WsSource As Worksheet
+    
+    ' --- Traiter les fichiers dans ce dossier ---
+    Fichier = Dir(Chemin & "*cofidis*.xlsm")
+    
+    Do While Fichier <> ""
+        
+        Set WbSource = Workbooks.Open(Chemin & Fichier)
+        Set WsSource = WbSource.Sheets("ocaocr")
+        
+        ' Même méthode de copie
+        WsDest.Cells.Clear
+        WsSource.Cells.Copy Destination:=WsDest.Range("A1")
+        
+        WbSource.Close SaveChanges:=False
+        
+        Fichier = Dir
+    Loop
+    
+    ' --- Parcourir les sous-dossiers ---
+    SousDossier = Dir(Chemin, vbDirectory)
+    
+    Do While SousDossier <> ""
+        If SousDossier <> "." And SousDossier <> ".." Then
+            If (GetAttr(Chemin & SousDossier) And vbDirectory) = vbDirectory Then
+                ParcourirDossiers Chemin & SousDossier & "\", WsDest
+            End If
         End If
-    Next i
-    ' --- fin de l'ajout ---
-    
-    ' ... reste du code original inchangé ...
+        SousDossier = Dir
+    Loop
+
+End Sub
