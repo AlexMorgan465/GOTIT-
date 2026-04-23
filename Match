@@ -1,246 +1,978 @@
-Option Explicit
-Dim fso As Object
-Const CHEMIN_RACINE As String = "C:\Users\HAMDANMO\Desktop\Accessibilité"
+' Module-level variables
+Dim currentRow As Long
+Dim isEditing As Boolean   ' optional, kept from original logic
 
-Private Sub UserForm_Initialize()
-    Set fso = CreateObject("Scripting.FileSystemObject")
+' ------------------------------------------------------------------
+' Helper functions to get the correct worksheet based on cmbTraitement
+' ------------------------------------------------------------------
+Private Function GetTempSheet() As Worksheet
+    If cmbTraitement.Value = "SOLVA" Then
+        Set GetTempSheet = ThisWorkbook.Worksheets("temp_Solva")
+    Else
+        Set GetTempSheet = ThisWorkbook.Worksheets("temp")
+    End If
+End Function
+
+Private Function GetExtractSheet() As Worksheet
+    If cmbTraitement.Value = "SOLVA" Then
+        Set GetExtractSheet = ThisWorkbook.Worksheets("extraction_solva")
+    Else
+        Set GetExtractSheet = ThisWorkbook.Worksheets("extraction")
+    End If
+End Function
+
+' ------------------------------------------------------------------
+' Refresh the ListView (named "vue") according to the active temp sheet
+' ------------------------------------------------------------------
+Private Sub RefreshListView()
+    Dim ws As Worksheet
+    Set ws = GetTempSheet()
     
-    If Not fso.FolderExists(CHEMIN_RACINE) Then
-        MsgBox "Chemin introuvable : " & CHEMIN_RACINE, vbCritical
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    
+    If lastRow < 2 Then
+        vue.Clear
         Exit Sub
     End If
     
-    ChargerClients
-End Sub
-
-' Niveau 1 : ACM, Bouygues telecom, etc
-Private Sub ChargerClients()
-    Dim DossierRacine As Object, SousDossier As Object
-    Set DossierRacine = fso.GetFolder(CHEMIN_RACINE)
-    Me.ComboBox_Client.Clear
-    For Each SousDossier In DossierRacine.SubFolders
-        Me.ComboBox_Client.AddItem SousDossier.Name
-    Next SousDossier
-    If Me.ComboBox_Client.ListCount > 0 Then Me.ComboBox_Client.ListIndex = 0
-End Sub
-
-' Niveau 2 : Pour ACM = A TRAITER, EN COURS... Pour CONTRATHEQUE = CONDITIONS GENERALES...
-Private Sub ComboBox_Client_Change()
-    Dim Chemin As String, Dossier As Object, SousDossier As Object
-    Me.ComboBox_Niveau2.Clear: Me.ComboBox_Niveau3.Clear: Me.ListBox_Fichiers.Clear
+    Dim rng1 As Range
+    Dim colCount As Integer
     
-    If Me.ComboBox_Client.Value = "" Then Exit Sub
-    Chemin = CHEMIN_RACINE & "\" & Me.ComboBox_Client.Value
-    
-    If fso.FolderExists(Chemin) Then
-        Set Dossier = fso.GetFolder(Chemin)
-        For Each SousDossier In Dossier.SubFolders
-            Me.ComboBox_Niveau2.AddItem SousDossier.Name
-        Next SousDossier
-        If Me.ComboBox_Niveau2.ListCount > 0 Then Me.ComboBox_Niveau2.ListIndex = 0
-    End If
-End Sub
-
-' Niveau 3 : Pour ACM = Assurances-Biens... Pour CONTRATHEQUE = A TRAITER...
-Private Sub ComboBox_Niveau2_Change()
-    Dim Chemin As String, Dossier As Object, SousDossier As Object
-    Me.ComboBox_Niveau3.Clear: Me.ListBox_Fichiers.Clear
-    
-    If Me.ComboBox_Client.Value = "" Or Me.ComboBox_Niveau2.Value = "" Then Exit Sub
-    Chemin = CHEMIN_RACINE & "\" & Me.ComboBox_Client.Value & "\" & Me.ComboBox_Niveau2.Value
-    
-    If fso.FolderExists(Chemin) Then
-        Set Dossier = fso.GetFolder(Chemin)
-        For Each SousDossier In Dossier.SubFolders
-            Me.ComboBox_Niveau3.AddItem SousDossier.Name
-        Next SousDossier
-        If Me.ComboBox_Niveau3.ListCount > 0 Then Me.ComboBox_Niveau3.ListIndex = 0
-    End If
-End Sub
-
-Private Sub ComboBox_Niveau3_Change()
-    Me.ListBox_Fichiers.Clear
-End Sub
-
-' === BOUTON AFFICHER FICHIERS DE "A TRAITER" ===
-Private Sub CommandButton_AfficherATraiter_Click()
-    Dim CheminATraiter As String
-    CheminATraiter = ConstruireCheminStatut("A TRAITER")
-    
-    If CheminATraiter = "" Then
-        MsgBox "Sélectionne le client et les sous-dossiers", vbExclamation
-        Exit Sub
+    If cmbTraitement.Value = "SOLVA" Then
+        colCount = 8   ' Columns A to F in temp_Solva
+        Set rng1 = ws.Range("A1:I" & lastRow)
+    Else
+        colCount = 9   ' Columns A to I in temp
+        Set rng1 = ws.Range("A1:I" & lastRow)
     End If
     
-    ChargerFichiers CheminATraiter
+    With vue
+        .Clear
+        .ColumnCount = colCount
+        .List = rng1.Value
+        ' Adjust column widths as needed
+        .ColumnWidths = "80;80;80;80;80;80;80;80;80"
+    End With
 End Sub
 
-' === BOUTON DEPLACER A TRAITER -> EN COURS ===
-Private Sub CommandButton_VersEnCours_Click()
-    DeplacerFichier "A TRAITER", "EN COURS"
+' ------------------------------------------------------------------
+' Clear all input fields
+' ------------------------------------------------------------------
+Sub clearform()
+    cmbCredit.Value = ""
+    cmbProduits.Value = ""
+    txtDossier.Value = ""
+    cmbSignature.Value = ""
+    cmbDecision.Value = ""
+    comment.Value = ""
+    Solvabilité.Value = ""
+    cmbDecisionSolva.Value = ""
+    cmbType.Value = ""
 End Sub
 
-' === BOUTON DEPLACER EN COURS -> TRAITES ===
-Private Sub CommandButton_VersTraites_Click()
-    DeplacerFichier "EN COURS", "TRAITES"
-End Sub
-
-' === BOUTON DEPLACER EN COURS -> NON CONFORME ===
-Private Sub CommandButton_VersNonConforme_Click()
-    DeplacerFichier "EN COURS", "NON CONFORME"
-End Sub
-
-' === BOUTON PARCOURIR ET DEPLACER VERS TRAITES OU NON CONFORME ===
-Private Sub CommandButton_ParcourirDeplacer_Click()
-    Dim CheminSource As String, NomFichier As String
-    Dim CheminDestBase As String, CheminDestFinal As String
-    Dim Rep As VbMsgBoxResult
+' ------------------------------------------------------------------
+' Logging procedures
+' ------------------------------------------------------------------
+Sub log_Etape1()
+    Dim wx As Worksheet
+    Set wx = GetExtractSheet()
     
-    ' 1. Choisir le fichier source n'importe où
-    With Application.FileDialog(msoFileDialogFilePicker)
-        .Title = "Sélectionne le fichier à déplacer"
-        .InitialFileName = Environ("USERPROFILE") & "\Desktop\"
-        .AllowMultiSelect = False
-        If .Show <> -1 Then Exit Sub
-        CheminSource = .SelectedItems(1)
+    Dim lastRow As Long, ligne As Long
+    lastRow = wx.Cells(wx.Rows.Count, 1).End(xlUp).Row
+    ligne = lastRow + 1
+    
+    With wx
+        .Cells(ligne, 1).Value = Environ("USERNAME")
+        .Cells(ligne, 2).Value = cmbTraitement.Value
+        .Cells(ligne, 3).Value = Now
+        .Cells(ligne, 5).Value = cmbCredit.Value
+        .Cells(ligne, 6).Value = cmbProduits.Value
+        .Cells(ligne, 7).Value = txtDossier.Value
+    End With
+End Sub
+
+Sub logSolva_Etape1()
+    Dim wx As Worksheet
+    Set wx = ThisWorkbook.Worksheets("extraction_solva")
+    
+    Dim lastRow As Long, ligne As Long
+    lastRow = wx.Cells(wx.Rows.Count, 1).End(xlUp).Row
+    ligne = lastRow + 1
+    
+    With wx
+        .Cells(ligne, 1).Value = Environ("USERNAME")
+        .Cells(ligne, 2).Value = cmbTraitement.Value
+        .Cells(ligne, 3).Value = Now
+        .Cells(ligne, 5).Value = Solvabilité.Value
+        .Cells(ligne, 6).Value = txtDossier.Value
+    End With
+End Sub
+
+Sub log_Etape2()
+    Dim wx As Worksheet
+    Set wx = GetExtractSheet()
+    
+    ' currentRow refers to the row in the temp sheet
+    ' We need to find the matching row in extraction sheet using the reference
+    Dim refValue As String
+    Dim tempWs As Worksheet
+    Set tempWs = GetTempSheet()
+    refValue = tempWs.Cells(currentRow, 7).Value   ' column G = dossier ref
+    
+    Dim lastRow As Long, i As Long
+    lastRow = wx.Cells(wx.Rows.Count, 1).End(xlUp).Row
+    Dim targetRow As Long
+    targetRow = 0
+    
+    For i = 2 To lastRow
+        If wx.Cells(i, 7).Value = refValue Then
+            targetRow = i
+            Exit For
+        End If
+    Next i
+    
+    If targetRow = 0 Then
+        ' If not found, append as new row (should not happen normally)
+        targetRow = lastRow + 1
+        wx.Cells(targetRow, 1).Value = Environ("USERNAME")
+        wx.Cells(targetRow, 2).Value = cmbTraitement.Value
+        wx.Cells(targetRow, 3).Value = tempWs.Cells(currentRow, 3).Value
+        wx.Cells(targetRow, 7).Value = refValue
+    End If
+    
+    With wx
+        .Cells(targetRow, 4).Value = Now
+        .Cells(targetRow, 8).Value = cmbSignature.Value
+        .Cells(targetRow, 9).Value = cmbDecision.Value
+        .Cells(targetRow, 10).Value = comment.Value
+        .Cells(targetRow, 11).Value = .Cells(targetRow, 4).Value - .Cells(targetRow, 3).Value
+    End With
+End Sub
+
+Sub log_Etape2_Solva()
+    Dim wx As Worksheet
+    Set wx = ThisWorkbook.Worksheets("extraction_solva")
+    
+    Dim tempWs As Worksheet
+    Set tempWs = GetTempSheet()
+    Dim refValue As String
+    refValue = tempWs.Cells(currentRow, 6).Value   ' column F = dossier ref in temp_Solva
+    
+    Dim lastRow As Long, i As Long
+    lastRow = wx.Cells(wx.Rows.Count, 1).End(xlUp).Row
+    Dim targetRow As Long
+    targetRow = 0
+    
+    For i = 2 To lastRow
+        If wx.Cells(i, 6).Value = refValue Then
+            targetRow = i
+            Exit For
+        End If
+    Next i
+    
+    If targetRow = 0 Then
+        targetRow = lastRow + 1
+        wx.Cells(targetRow, 1).Value = Environ("USERNAME")
+        wx.Cells(targetRow, 2).Value = "SOLVA"
+        wx.Cells(targetRow, 3).Value = tempWs.Cells(currentRow, 3).Value
+        wx.Cells(targetRow, 5).Value = Solvabilité.Value
+        wx.Cells(targetRow, 6).Value = refValue
+    End If
+    
+    With wx
+        .Cells(targetRow, 4).Value = Now
+        .Cells(targetRow, 7).Value = cmbType.Value
+        .Cells(targetRow, 8).Value = cmbDecisionSolva.Value
+        .Cells(targetRow, 7).Value = comment.Value
+        .Cells(targetRow, 10).Value = .Cells(targetRow, 4).Value - .Cells(targetRow, 3).Value
+    End With
+End Sub
+
+' ------------------------------------------------------------------
+' Add new record (cmb_Ajouter_Click)
+' ------------------------------------------------------------------
+Private Sub cmb_Ajouter_Click()
+    Dim ws As Worksheet
+    Set ws = GetTempSheet()
+    
+    Dim refValue As String
+    refValue = Trim(txtDossier.Value)
+    If cmbTraitement.Value = "SOLVA" Then
+        If refValue = "" Then
+            MsgBox "Veuillez saisir une référence dossier.", vbExclamation
+            Exit Sub
+        ElseIf Solvabilité.Value = "" Then
+            MsgBox "Veuillez remplir la Solvabilité.", vbExclamation
+            Exit Sub
+        End If
+    Else
+        If refValue = "" Then
+            MsgBox "Veuillez saisir une référence dossier.", vbExclamation
+            Exit Sub
+        ElseIf cmbProduits.Value = "" Then
+            MsgBox "Veuillez choisir un type de Produit.", vbExclamation
+            Exit Sub
+        ElseIf cmbCredit.Value = "" Then
+            MsgBox "Veuillez choisir un type de Crédit.", vbExclamation
+            Exit Sub
+        End If
+    End If
+    
+    Dim lastRow As Long, i As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    
+    ' Determine column where reference is stored
+    Dim refCol As Long
+    If cmbTraitement.Value = "SOLVA" Then
+        refCol = 6   ' column F
+    Else
+        refCol = 7   ' column G
+    End If
+    
+    ' Check for duplicate reference
+    For i = 2 To lastRow
+        If ws.Cells(i, refCol).Value = refValue Then
+            MsgBox "La référence dossier '" & refValue & "' existe déjà !", vbCritical
+            Exit Sub
+        End If
+    Next i
+    
+    Dim newRow As Long
+    newRow = lastRow + 1
+    
+    With ws
+        .Cells(newRow, 1).Value = Environ("USERNAME")
+        .Cells(newRow, 2).Value = cmbTraitement.Value
+        .Cells(newRow, 3).Value = Now
+        
+        If cmbTraitement.Value = "SOLVA" Then
+            .Cells(newRow, 5).Value = Solvabilité.Value
+            .Cells(newRow, 6).Value = txtDossier.Value
+        Else
+            .Cells(newRow, 5).Value = cmbCredit.Value
+            .Cells(newRow, 6).Value = cmbProduits.Value
+            .Cells(newRow, 7).Value = txtDossier.Value
+        End If
     End With
     
-    NomFichier = fso.GetFileName(CheminSource)
-    
-    ' 2. Choisir la destination TRAITES ou NON CONFORME selon les ComboBox
-    CheminDestBase = ConstruireCheminBase()
-    If CheminDestBase = "" Then
-        MsgBox "Sélectionne d'abord le client et sous-dossiers dans les ComboBox", vbExclamation
-        Exit Sub
-    End If
-    
-    ' 3. Demande à l'utilisateur où envoyer
-    Rep = MsgBox("Déplacer vers :" & vbCrLf & _
-                 "Oui = TRAITES" & vbCrLf & _
-                 "Non = NON CONFORME" & vbCrLf & _
-                 "Annuler = Abandonner", vbYesNoCancel + vbQuestion, NomFichier)
-    
-    If Rep = vbCancel Then Exit Sub
-    If Rep = vbYes Then
-        CheminDestFinal = CheminDestBase & "\TRAITES"
+    ' Log to extraction sheet
+    If cmbTraitement.Value = "SOLVA" Then
+        Call logSolva_Etape1
     Else
-        CheminDestFinal = CheminDestBase & "\NON CONFORME"
+        Call log_Etape1
     End If
     
-    If Not fso.FolderExists(CheminDestFinal) Then
-        MsgBox "Le dossier destination n'existe pas : " & CheminDestFinal, vbCritical
-        Exit Sub
-    End If
-    
-    On Error GoTo ErreurParcourir
-    If fso.FileExists(CheminDestFinal & "\" & NomFichier) Then fso.DeleteFile CheminDestFinal & "\" & NomFichier, True
-    fso.MoveFile CheminSource, CheminDestFinal & "\"
-    MsgBox "Fichier déplacé avec succès vers " & fso.GetFileName(CheminDestFinal), vbInformation
-    Exit Sub
-    
-ErreurParcourir:
-    MsgBox "Erreur : " & Err.Description, vbCritical
+    Call clearform
+    Call RefreshListView
+    MsgBox "Dossier ajouté avec succès !", vbInformation
 End Sub
 
-' === FONCTIONS UTILITAIRES ===
-
-' Construit le chemin de base sans le statut A TRAITER/EN COURS/TRAITES
-Private Function ConstruireCheminBase() As String
-    Dim Chemin As String
-    If Me.ComboBox_Client.Value = "" Then Exit Function
-    Chemin = CHEMIN_RACINE & "\" & Me.ComboBox_Client.Value
+' ------------------------------------------------------------------
+' Save modifications (cmb_Terminer_Click)
+' ------------------------------------------------------------------
+Private Sub cmb_Terminer_Click()
+    Dim ws As Worksheet
+    Set ws = GetTempSheet()
     
-    ' Cas ACM : ACM\Assurances-Biens
-    ' Cas CONTRATHEQUE : CONTRATHEQUE\CONDITIONS GENERALES
-    ' Cas DIRCO : DIRCO\CIC\FICHES CLIENTS
-    If Me.ComboBox_Niveau2.Value <> "" Then Chemin = Chemin & "\" & Me.ComboBox_Niveau2.Value
-    If Me.ComboBox_Niveau3.Value <> "" And Me.ComboBox_Niveau3.Value <> "A TRAITER" _
-       And Me.ComboBox_Niveau3.Value <> "EN COURS" And Me.ComboBox_Niveau3.Value <> "TRAITES" _
-       And Me.ComboBox_Niveau3.Value <> "NON CONFORME" Then
-        Chemin = Chemin & "\" & Me.ComboBox_Niveau3.Value
-    End If
-    
-    ConstruireCheminBase = Chemin
-End Function
-
-' Construit le chemin complet vers A TRAITER ou EN COURS selon la sélection
-Private Function ConstruireCheminStatut(Statut As String) As String
-    Dim CheminBase As String
-    CheminBase = ConstruireCheminBase()
-    If CheminBase = "" Then Exit Function
-    
-    ' Si Niveau3 est déjà un statut, on le remplace
-    If Me.ComboBox_Niveau3.Value = "A TRAITER" Or Me.ComboBox_Niveau3.Value = "EN COURS" _
-       Or Me.ComboBox_Niveau3.Value = "TRAITES" Or Me.ComboBox_Niveau3.Value = "NON CONFORME" Then
-        ConstruireCheminStatut = CheminBase & "\" & Statut
-    Else
-        ' Sinon on ajoute le statut à la fin
-        ConstruireCheminStatut = CheminBase & "\" & Statut
-    End If
-End Function
-
-' Charge les fichiers d'un chemin dans la ListBox
-Private Sub ChargerFichiers(Chemin As String)
-    Dim Dossier As Object, Fichier As Object
-    Me.ListBox_Fichiers.Clear
-    
-    If Not fso.FolderExists(Chemin) Then
-        Me.ListBox_Fichiers.AddItem "Dossier introuvable : " & fso.GetFileName(Chemin)
+    If currentRow = 0 Then
+        MsgBox "Veuillez d'abord rechercher et sélectionner une ligne à modifier.", vbExclamation
         Exit Sub
     End If
     
-    Set Dossier = fso.GetFolder(Chemin)
-    If Dossier.Files.Count = 0 Then
-        Me.ListBox_Fichiers.AddItem "Aucun fichier dans " & fso.GetFileName(Chemin)
+    If cmbTraitement.Value = "SOLVA" Then
+        ' SOLVA case
+        If cmbDecisionSolva.Value = "" Then
+            MsgBox "Veuillez sélectionner une décision solvabilité."
+            Exit Sub
+        End If
+        
+        With ws
+            .Cells(currentRow, 4).Value = Now
+            .Cells(currentRow, 5).Value = Solvabilité.Value
+            .Cells(currentRow, 7).Value = cmbType.Value
+            .Cells(currentRow, 8).Value = cmbDecisionSolva.Value
+            .Cells(currentRow, 9).Value = comment.Value   ' assuming comment is in column G
+            .Cells(currentRow, 10).Value = .Cells(currentRow, 4).Value - .Cells(currentRow, 3).Value
+        End With
+        
+        Call log_Etape2_Solva
     Else
-        For Each Fichier In Dossier.Files
-            Me.ListBox_Fichiers.AddItem Fichier.Name
-        Next Fichier
+        ' Normal case (OCAOCR / ETUDEINC)
+        If cmbSignature.Value = "" Then
+            MsgBox "Veuillez remplir l'activité."
+            Exit Sub
+        ElseIf cmbDecision.Value = "" Then
+            MsgBox "Veuillez sélectionner le produit."
+            Exit Sub
+        End If
+        
+        With ws
+            .Cells(currentRow, 4).Value = Now
+            .Cells(currentRow, 8).Value = cmbSignature.Value
+            .Cells(currentRow, 9).Value = cmbDecision.Value
+            .Cells(currentRow, 10).Value = comment.Value
+            .Cells(currentRow, 11).Value = .Cells(currentRow, 4).Value - .Cells(currentRow, 3).Value
+        End With
+        
+        Call log_Etape2
     End If
+    
+    Call clearform
+    Call RefreshListView
+    MsgBox "Modifications enregistrées.", vbInformation
 End Sub
 
-' Déplace le fichier sélectionné d'un statut vers un autre
-Private Sub DeplacerFichier(StatutSource As String, StatutDest As String)
-    Dim CheminSource As String, CheminDest As String, NomFichier As String
+' ------------------------------------------------------------------
+' Clear all data from the active temp sheet
+' ------------------------------------------------------------------
+Private Sub cmb_vider_Click()
+    Dim ws As Worksheet
+    Set ws = GetTempSheet()
+    ws.Rows("2:" & ws.Rows.Count).ClearContents
+    Call RefreshListView
+    MsgBox "Vidage effectué avec succès !"
+End Sub
+
+' ------------------------------------------------------------------
+' Export standard extraction sheet to CSV (original functionality)
+' ------------------------------------------------------------------
+Private Sub cmb_Sauvegarder_Click()
+    Dim wx As Worksheet
+    Set wx = ThisWorkbook.Worksheets("extraction")
     
-    If Me.ListBox_Fichiers.ListIndex = -1 Then
-        MsgBox "Sélectionne d'abord un fichier dans la liste", vbExclamation
+    Dim lastRow As Long, i As Long
+    lastRow = wx.Cells(wx.Rows.Count, 1).End(xlUp).Row
+    
+    If lastRow < 2 Then
+        MsgBox "Aucune donnée à sauvegarder.", vbExclamation
         Exit Sub
     End If
     
-    NomFichier = Me.ListBox_Fichiers.Value
-    If Left(NomFichier, 5) = "Aucun" Or Left(NomFichier, 7) = "Dossier" Then Exit Sub
+    Dim userName As String
+    userName = Environ("USERNAME")
     
-    CheminSource = ConstruireCheminStatut(StatutSource)
-    CheminDest = ConstruireCheminStatut(StatutDest)
+    Dim ligneDate As String, moisLigne As String, anneeLigne As String
+    Dim filePath As String, ligneCSV As String
+    Dim fileDict As Object
+    Set fileDict = CreateObject("Scripting.Dictionary")
+    Dim fileNum As Integer
+    Dim nbExport As Long
+    nbExport = 0
     
-    If CheminSource = "" Or CheminDest = "" Then
-        MsgBox "Chemin source ou destination invalide", vbCritical
+    For i = 2 To lastRow
+        ligneDate = wx.Cells(i, 3).Value
+        If ligneDate <> "" Then
+            moisLigne = Mid(ligneDate, 4, 2)
+            anneeLigne = Mid(ligneDate, 7, 4)
+            filePath = "\\uf11pu01\ACCESSIBILITÉ_CONSEILLERS\" & userName & "_" & moisLigne & "_" & anneeLigne & ".csv"
+            
+            If Not fileDict.exists(filePath) Then
+                fileNum = FreeFile
+                Open filePath For Append As #fileNum
+                fileDict.Add filePath, fileNum
+            End If
+            
+            fileNum = fileDict(filePath)
+            ligneCSV = wx.Cells(i, 1).Value & ";" & wx.Cells(i, 2).Value & ";" & wx.Cells(i, 3).Value & ";" & _
+                       wx.Cells(i, 4).Value & ";" & wx.Cells(i, 5).Value & ";" & wx.Cells(i, 6).Value & ";" & _
+                       wx.Cells(i, 7).Value & ";" & wx.Cells(i, 8).Value & ";" & wx.Cells(i, 9).Value & ";" & _
+                       wx.Cells(i, 10).Value & ";" & wx.Cells(i, 11).Value
+            Print #fileNum, ligneCSV
+            nbExport = nbExport + 1
+        End If
+    Next i
+    
+    Dim key As Variant
+    For Each key In fileDict.Keys
+        Close #fileDict(key)
+    Next key
+    
+    wx.Rows("3:" & wx.Rows.Count).ClearContents
+    MsgBox nbExport & " ligne(s) sauvegardée(s) dans les fichiers mensuels.", vbInformation
+End Sub
+
+' ------------------------------------------------------------------
+' Export solva extraction sheet to CSV (new button)
+' ------------------------------------------------------------------
+Private Sub cmb_SauvegarderSolva_Click()
+    Dim wx As Worksheet
+    Set wx = ThisWorkbook.Worksheets("extraction_solva")
+    
+    Dim lastRow As Long, i As Long
+    lastRow = wx.Cells(wx.Rows.Count, 1).End(xlUp).Row
+    
+    If lastRow < 2 Then
+        MsgBox "Aucune donnée SOLVA à sauvegarder.", vbExclamation
         Exit Sub
     End If
     
-    If Not fso.FileExists(CheminSource & "\" & NomFichier) Then
-        MsgBox "Fichier source introuvable", vbCritical
-        Exit Sub
+    Dim userName As String
+    userName = Environ("USERNAME")
+    
+    Dim ligneDate As String, moisLigne As String, anneeLigne As String
+    Dim filePath As String, ligneCSV As String
+    Dim fileDict As Object
+    Set fileDict = CreateObject("Scripting.Dictionary")
+    Dim fileNum As Integer
+    Dim nbExport As Long
+    nbExport = 0
+    
+    For i = 2 To lastRow
+        ligneDate = wx.Cells(i, 3).Value
+        If ligneDate <> "" Then
+            moisLigne = Mid(ligneDate, 4, 2)
+            anneeLigne = Mid(ligneDate, 7, 4)
+            ' Adjust path for solva exports (you may change folder as needed)
+            filePath = "\\uf11pu01\ACCESSIBILITÉ_CONSEILLERS\SOLVA\" & userName & "_" & moisLigne & "_" & anneeLigne & ".csv"
+            
+            If Not fileDict.exists(filePath) Then
+                fileNum = FreeFile
+                Open filePath For Append As #fileNum
+                fileDict.Add filePath, fileNum
+            End If
+            
+            fileNum = fileDict(filePath)
+            ' Build CSV with columns: adjust according to extraction_solva structure
+            ligneCSV = wx.Cells(i, 1).Value & ";" & wx.Cells(i, 2).Value & ";" & wx.Cells(i, 3).Value & ";" & _
+                       wx.Cells(i, 4).Value & ";" & wx.Cells(i, 5).Value & ";" & wx.Cells(i, 6).Value & ";" & _
+                       wx.Cells(i, 7).Value & ";" & wx.Cells(i, 8).Value
+            Print #fileNum, ligneCSV
+            nbExport = nbExport + 1
+        End If
+    Next i
+    
+    Dim key As Variant
+    For Each key In fileDict.Keys
+        Close #fileDict(key)
+    Next key
+    
+    wx.Rows("3:" & wx.Rows.Count).ClearContents
+    MsgBox nbExport & " ligne(s) SOLVA sauvegardée(s) dans les fichiers mensuels.", vbInformation
+End Sub
+
+' ------------------------------------------------------------------
+' Show/hide controls based on cmbTraitement selection
+' ------------------------------------------------------------------
+Private Sub CommandButton1_Click()
+    If cmbTraitement.Value = "OCAOCR" Or cmbTraitement.Value = "ETUDEINC" Then
+        Solvabilité.Visible = False
+        Label11.Visible = False
+        cmbType.Visible = False
+        cmbDecisionSolva.Visible = False
+        
+        Label8.Visible = True
+        Label4.Visible = True
+        Label7.Visible = True
+        cmbCredit.Visible = True
+        cmbProduits.Visible = True
+        cmbSignature.Visible = True
+        cmbDecision.Visible = True
+    ElseIf cmbTraitement.Value = "SOLVA" Then
+        cmbCredit.Visible = False
+        cmbProduits.Visible = False
+        cmbSignature.Visible = False
+        cmbDecision.Visible = False
+        Label4.Visible = False
+        Label7.Visible = False
+        Label8.Visible = False
+        
+        cmbDecisionSolva.Visible = True
+        cmbType.Visible = True
+        Solvabilité.Visible = True
+        Label11.Visible = True
     End If
+    Call RefreshListView
+    currentRow = 0
+End Sub
+' ------------------------------------------------------------------
+' Form initialization
+' ------------------------------------------------------------------
+Private Sub UserForm_Initialize()
+    Call StartClock   ' assumed external procedure
+    ' Populate comboboxes
+    cmbTraitement.Clear
+    cmbTraitement.AddItem "OCAOCR"
+    cmbTraitement.AddItem "ETUDEINC"
+    cmbTraitement.AddItem "SOLVA"
     
-    If Not fso.FolderExists(CheminDest) Then
-        MsgBox "Dossier destination introuvable : " & CheminDest, vbCritical
-        Exit Sub
-    End If
+    cmbDecisionSolva.Clear
+    cmbDecisionSolva.AddItem "OK"
+    cmbDecisionSolva.AddItem "KO"
     
-    On Error GoTo ErreurMove
-    If fso.FileExists(CheminDest & "\" & NomFichier) Then fso.DeleteFile CheminDest & "\" & NomFichier, True
-    fso.MoveFile CheminSource & "\" & NomFichier, CheminDest & "\"
+    cmbType.Clear
+    cmbType.AddItem "GRILLE"
+    cmbType.AddItem "WEB"
     
-    MsgBox "Fichier déplacé vers " & StatutDest, vbInformation
-    ChargerFichiers CheminSource ' Rafraîchit la liste
-    Exit Sub
+    cmbCredit.Clear
+    cmbCredit.AddItem "AUG"
+    cmbCredit.AddItem "OUV"
     
-ErreurMove:
-    MsgBox "Erreur : " & Err.Description, vbCritical
+    cmbProduits.Clear
+    cmbProduits.AddItem "AUG ACC"
+    cmbProduits.AddItem "OUV ACC"
+    cmbProduits.AddItem "AUG PART"
+    cmbProduits.AddItem "OUV PSM"
+    cmbProduits.AddItem "OUV PSM/PSM"
+    cmbProduits.AddItem "OUV PSM d'AUG"
+    
+    cmbSignature.Clear
+    cmbSignature.AddItem "SE"
+    cmbSignature.AddItem "Papier"
+    
+    cmbDecision.Clear
+    cmbDecision.AddItem "OCA"
+    cmbDecision.AddItem "OCR"
+    cmbDecision.AddItem "OCI"
+    cmbDecision.AddItem "CPP"
+    cmbDecision.AddItem "TDT"
+    
+    agent.Value = "Bonjour " & Application.userName
+    
+    Call RefreshListView
 End Sub
 
 Private Sub UserForm_Terminate()
-    Set fso = Nothing
+    Call StopClock   ' assumed external procedure
 End Sub
+
+Private Sub UserForm_activate()
+    Me.StartUpPosition = 0
+    Me.Left = Application.Left + (Application.Width - Me.Width) / 2
+    Me.Top = Application.Top + (Application.Height - Me.Height) / 2
+End Sub
+' ------------------------------------------------------------------
+' Search functions (dynamically use the active temp sheet)
+' ------------------------------------------------------------------
+Private Sub recherche_Cred_Click()
+    SearchData_Cred
+End Sub
+Private Sub recherche_Ref_Click()
+    SearchData_REF
+End Sub
+Private Sub recherche_Type_Click()
+    SearchData_Type
+End Sub
+Private Sub recherche_Sign_Click()
+    SearchData_Sign
+End Sub
+Sub SearchData_REF()
+
+    Dim ws As Worksheet
+    If cmbTraitement.Value = "SOLVA" Then
+    Set ws = ThisWorkbook.Worksheets("temp_Solva")
+    Else
+    Set ws = ThisWorkbook.Worksheets("temp")
+
+    vue.Clear
+    vue.ColumnWidths = "80;80;100;100;80;80;80;80"
+    vue.ColumnHeads = True
+    
+    If ws.Cells(2, 1).Value = "" Then
+        MsgBox "Aucune donnée trouvée.", vbInformation
+        Exit Sub
+    End If
+
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    
+    vue.ColumnCount = 10
+    
+    Dim searchContract As String
+    searchContract = InputBox("Entrez la référence dossier :", "Recherche")
+
+    Dim i As Long
+    
+    If searchContract = "" Then
+        vue.List = ws.Range("A2:I" & lastRow).Value
+        Set rng1 = ws.Range("A1:I" & ws.Range("A" & ws.Rows.Count).End(xlUp).Row)
+        With Me.vue
+            .BorderStyle = 1
+            .BorderColor = &H80000012
+            
+            .Clear
+        '.ColumnHeads = True
+            .ColumnCount = rng1.Columns.Count
+            MyArray1 = rng1
+            .List = MyArray1
+            .ColumnWidths = "80;80;100;100;80;80;80;80"
+        End With
+        Exit Sub
+    End If
+    
+    Dim results As Collection
+    Set results = New Collection
+    
+    For i = 2 To lastRow
+        If InStr(1, ws.Cells(i, 7).Value, searchContract, vbTextCompare) > 0 Then
+            results.Add i
+        End If
+    Next i
+    
+    If results.Count = 0 Then
+        MsgBox "Aucun dossier trouvé.", vbInformation
+        Exit Sub
+    End If
+    
+    Dim arr()
+    ReDim arr(1 To results.Count, 1 To 9)
+    
+    For i = 1 To results.Count
+        arr(i, 1) = ws.Cells(results(i), 1).Value
+        arr(i, 2) = ws.Cells(results(i), 2).Value
+        arr(i, 3) = ws.Cells(results(i), 3).Value
+        arr(i, 4) = ws.Cells(results(i), 4).Value
+        arr(i, 5) = ws.Cells(results(i), 5).Value
+        arr(i, 6) = ws.Cells(results(i), 6).Value
+        arr(i, 7) = ws.Cells(results(i), 7).Value
+        arr(i, 8) = ws.Cells(results(i), 8).Value
+        arr(i, 9) = ws.Cells(results(i), 9).Value
+    Next i
+
+    vue.List = arr
+    End If
+
+End Sub
+Sub SearchData_Cred()
+
+        Dim ws As Worksheet
+    Set ws = ThisWorkbook.Worksheets("temp")
+
+    vue.Clear
+    vue.ColumnWidths = "80;80;100;100;80;80;80;80"
+    vue.ColumnHeads = True
+    
+    If ws.Cells(2, 1).Value = "" Then
+        MsgBox "Aucune donnée trouvée.", vbInformation
+        Exit Sub
+    End If
+
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    
+    vue.ColumnCount = 10
+    
+    Dim searchContract As String
+    searchContract = InputBox("Entrez la référence dossier :", "Recherche")
+
+    Dim i As Long
+    
+    If searchContract = "" Then
+        vue.List = ws.Range("A2:I" & lastRow).Value
+        Set rng1 = ws.Range("A1:I" & ws.Range("A" & ws.Rows.Count).End(xlUp).Row)
+        With Me.vue
+            .BorderStyle = 1
+            .BorderColor = &H80000012
+            
+            .Clear
+        '.ColumnHeads = True
+            .ColumnCount = rng1.Columns.Count
+            MyArray1 = rng1
+            .List = MyArray1
+            .ColumnWidths = "80;80;100;100;80;80;80;80;80"
+        End With
+        Exit Sub
+    End If
+    
+    Dim results As Collection
+    Set results = New Collection
+    
+    For i = 2 To lastRow
+        If InStr(1, ws.Cells(i, 5).Value, searchContract, vbTextCompare) > 0 Then
+            results.Add i
+        End If
+    Next i
+    
+    If results.Count = 0 Then
+        MsgBox "Aucun dossier trouvé.", vbInformation
+        Exit Sub
+    End If
+    
+    Dim arr()
+    ReDim arr(1 To results.Count, 1 To 9)
+    
+    For i = 1 To results.Count
+        arr(i, 1) = ws.Cells(results(i), 1).Value
+        arr(i, 2) = ws.Cells(results(i), 2).Value
+        arr(i, 3) = ws.Cells(results(i), 3).Value
+        arr(i, 4) = ws.Cells(results(i), 4).Value
+        arr(i, 5) = ws.Cells(results(i), 5).Value
+        arr(i, 6) = ws.Cells(results(i), 6).Value
+        arr(i, 7) = ws.Cells(results(i), 7).Value
+        arr(i, 8) = ws.Cells(results(i), 8).Value
+        arr(i, 9) = ws.Cells(results(i), 9).Value
+    Next i
+
+    vue.List = arr
+End Sub
+Sub SearchData_Type()
+
+    Dim ws As Worksheet
+    If cmbTraitement.Value = "SOLVA" Then
+    Set ws = ThisWorkbook.Worksheets("temp_Solva")
+    vue.Clear
+    vue.ColumnWidths = "80;80;100;100;80;80;80;80"
+    vue.ColumnHeads = True
+    
+    If ws.Cells(2, 1).Value = "" Then
+        MsgBox "Aucune donnée trouvée.", vbInformation
+        Exit Sub
+    End If
+
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    
+    vue.ColumnCount = 10
+    
+    Dim searchContract As String
+    searchContract = InputBox("Entrez la référence dossier :", "Recherche")
+
+    Dim i As Long
+    
+    If searchContract = "" Then
+        vue.List = ws.Range("A2:I" & lastRow).Value
+        Set rng1 = ws.Range("A1:I" & ws.Range("A" & ws.Rows.Count).End(xlUp).Row)
+        With Me.vue
+            .BorderStyle = 1
+            .BorderColor = &H80000012
+            
+            .Clear
+        '.ColumnHeads = True
+            .ColumnCount = rng1.Columns.Count
+            MyArray1 = rng1
+            .List = MyArray1
+            .ColumnWidths = "80;80;100;100;80;80;80;80"
+        End With
+        Exit Sub
+    End If
+    
+    Dim results As Collection
+    Set results = New Collection
+    
+    For i = 2 To lastRow
+        If InStr(1, ws.Cells(i, 2).Value, searchContract, vbTextCompare) > 0 Then
+            results.Add i
+        End If
+    Next i
+    
+    If results.Count = 0 Then
+        MsgBox "Aucun dossier trouvé.", vbInformation
+        Exit Sub
+    End If
+    
+    Dim arr()
+    ReDim arr(1 To results.Count, 1 To 9)
+    
+    For i = 1 To results.Count
+        arr(i, 1) = ws.Cells(results(i), 1).Value
+        arr(i, 2) = ws.Cells(results(i), 2).Value
+        arr(i, 3) = ws.Cells(results(i), 3).Value
+        arr(i, 4) = ws.Cells(results(i), 4).Value
+        arr(i, 5) = ws.Cells(results(i), 5).Value
+        arr(i, 6) = ws.Cells(results(i), 6).Value
+        arr(i, 7) = ws.Cells(results(i), 7).Value
+        arr(i, 8) = ws.Cells(results(i), 8).Value
+        arr(i, 9) = ws.Cells(results(i), 9).Value
+    Next i
+
+    vue.List = arr
+    Else
+    Set ws = ThisWorkbook.Worksheets("temp")
+    vue.Clear
+    vue.ColumnWidths = "80;80;100;100;80;80;80;80"
+    vue.ColumnHeads = True
+    
+    If ws.Cells(2, 1).Value = "" Then
+        MsgBox "Aucune donnée trouvée.", vbInformation
+        Exit Sub
+    End If
+
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    
+    vue.ColumnCount = 10
+
+    searchContract = InputBox("Entrez la référence dossier :", "Recherche")
+
+    
+    If searchContract = "" Then
+        vue.List = ws.Range("A2:I" & lastRow).Value
+        Set rng1 = ws.Range("A1:I" & ws.Range("A" & ws.Rows.Count).End(xlUp).Row)
+        With Me.vue
+            .BorderStyle = 1
+            .BorderColor = &H80000012
+            
+            .Clear
+        '.ColumnHeads = True
+            .ColumnCount = rng1.Columns.Count
+            MyArray1 = rng1
+            .List = MyArray1
+            .ColumnWidths = "80;80;100;100;80;80;80;80"
+        End With
+        Exit Sub
+    End If
+
+    Set results = New Collection
+    
+    For i = 2 To lastRow
+        If InStr(1, ws.Cells(i, 2).Value, searchContract, vbTextCompare) > 0 Then
+            results.Add i
+        End If
+    Next i
+    
+    If results.Count = 0 Then
+        MsgBox "Aucun dossier trouvé.", vbInformation
+        Exit Sub
+    End If
+
+    ReDim arr(1 To results.Count, 1 To 9)
+    
+    For i = 1 To results.Count
+        arr(i, 1) = ws.Cells(results(i), 1).Value
+        arr(i, 2) = ws.Cells(results(i), 2).Value
+        arr(i, 3) = ws.Cells(results(i), 3).Value
+        arr(i, 4) = ws.Cells(results(i), 4).Value
+        arr(i, 5) = ws.Cells(results(i), 5).Value
+        arr(i, 6) = ws.Cells(results(i), 6).Value
+        arr(i, 7) = ws.Cells(results(i), 7).Value
+        arr(i, 8) = ws.Cells(results(i), 8).Value
+        arr(i, 9) = ws.Cells(results(i), 9).Value
+    Next i
+
+    vue.List = arr
+    End If
+    
+
+End Sub
+
+Sub SearchData_Sign()
+
+        Dim ws As Worksheet
+    Set ws = ThisWorkbook.Worksheets("temp")
+
+    vue.Clear
+    vue.ColumnWidths = "80;80;100;100;80;80;80;80"
+    vue.ColumnHeads = True
+    
+    If ws.Cells(2, 1).Value = "" Then
+        MsgBox "Aucune donnée trouvée.", vbInformation
+        Exit Sub
+    End If
+
+    Dim lastRow As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    
+    vue.ColumnCount = 10
+    
+    Dim searchContract As String
+    searchContract = InputBox("Entrez la référence dossier :", "Recherche")
+
+    Dim i As Long
+    
+    If searchContract = "" Then
+        vue.List = ws.Range("A2:I" & lastRow).Value
+        Set rng1 = ws.Range("A1:I" & ws.Range("A" & ws.Rows.Count).End(xlUp).Row)
+        With Me.vue
+            .BorderStyle = 1
+            .BorderColor = &H80000012
+            
+            .Clear
+        '.ColumnHeads = True
+            .ColumnCount = rng1.Columns.Count
+            MyArray1 = rng1
+            .List = MyArray1
+            .ColumnWidths = "80;80;100;100;80;80;80;80"
+        End With
+        Exit Sub
+    End If
+    
+    Dim results As Collection
+    Set results = New Collection
+    
+    For i = 2 To lastRow
+        If InStr(1, ws.Cells(i, 8).Value, searchContract, vbTextCompare) > 0 Then
+            results.Add i
+        End If
+    Next i
+    
+    If results.Count = 0 Then
+        MsgBox "Aucun dossier trouvé.", vbInformation
+        Exit Sub
+    End If
+    
+    Dim arr()
+    ReDim arr(1 To results.Count, 1 To 9)
+    
+    For i = 1 To results.Count
+        arr(i, 1) = ws.Cells(results(i), 1).Value
+        arr(i, 2) = ws.Cells(results(i), 2).Value
+        arr(i, 3) = ws.Cells(results(i), 3).Value
+        arr(i, 4) = ws.Cells(results(i), 4).Value
+        arr(i, 5) = ws.Cells(results(i), 5).Value
+        arr(i, 6) = ws.Cells(results(i), 6).Value
+        arr(i, 7) = ws.Cells(results(i), 7).Value
+        arr(i, 8) = ws.Cells(results(i), 8).Value
+        arr(i, 9) = ws.Cells(results(i), 9).Value
+    Next i
+
+    vue.List = arr
+
+End Sub
+
+' ------------------------------------------------------------------
+' Load selected row from ListView into form controls
+' ------------------------------------------------------------------
+Private Sub vue_Click()
+    If vue.ListIndex >= 0 Then LoadSelectedData
+End Sub
+
+Sub LoadSelectedData()
+    Dim ws As Worksheet
+    Set ws = GetTempSheet()
+    
+    If vue.ListIndex < 0 Then Exit Sub
+    
+    ' Identify the reference value to locate the row in the sheet
+    Dim refValue As String
+    Dim refCol As Long
+    If cmbTraitement.Value = "SOLVA" Then
+        refCol = 6
+        refValue = vue.List(vue.ListIndex, 5)   ' column 6 (F) is 0-based? Actually List is 0-based: column index 5 = 6th column
+        ' Correction: List array is 0-based, so column 5 (index) = 6th column
+        refValue = vue.List(vue.ListIndex, 5)
+    Else
+        refCol = 7
+        refValue = vue.List(vue.ListIndex, 6)   ' column 7 (G)
+    End If
+    
+    Dim lastRow As Long, i As Long
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    
+    For i = 2 To lastRow
+        If ws.Cells(i, refCol).Value = refValue Then
+            currentRow = i
+            Exit For
+        End If
+    Next i
+    
+    If currentRow = 0 Then Exit Sub
+    
+    With ws
+        If cmbTraitement.Value = "SOLVA" Then
+            Solvabilité.Value = .Cells(currentRow, 5).Value
+            txtDossier.Value = .Cells(currentRow, 6).Value
+            cmbType.Value = .Cells(currentRow, 7).Value
+            cmbDecisionSolva.Value = .Cells(currentRow, 8).Value   ' assuming decision stored in col5
+            comment.Value = .Cells(currentRow, 9).Value
+        Else
+            cmbCredit.Value = .Cells(currentRow, 5).Value
+            cmbProduits.Value = .Cells(currentRow, 6).Value
+            txtDossier.Value = .Cells(currentRow, 7).Value
+            cmbSignature.Value = .Cells(currentRow, 8).Value
+            cmbDecision.Value = .Cells(currentRow, 9).Value
+            comment.Value = .Cells(currentRow, 10).Value
+        End If
+    End With
+    
+    isEditing = True
+End Sub
+
