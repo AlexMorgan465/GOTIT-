@@ -7,7 +7,7 @@
     <!-- Google Fonts + Font Awesome Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <!-- Chart.js & SheetJS -->
+    <!-- SheetJS & Chart.js -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
@@ -24,13 +24,11 @@
             padding: 32px 28px;
         }
 
-        /* Conteneur principal */
         .dashboard-container {
             max-width: 1600px;
             margin: 0 auto;
         }
 
-        /* Header et identité banque */
         .bank-header {
             display: flex;
             justify-content: space-between;
@@ -68,7 +66,6 @@
             color: #ff7e33;
         }
 
-        /* Upload zone */
         .upload-card {
             background: white;
             border-radius: 28px;
@@ -125,7 +122,6 @@
             display: inline-block;
         }
 
-        /* KPI Grid */
         .kpi-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -139,7 +135,6 @@
             box-shadow: 0 5px 14px rgba(0, 0, 0, 0.03);
             transition: transform 0.1s ease, box-shadow 0.2s;
             border: 1px solid #e7edf2;
-            backdrop-filter: blur(0px);
         }
         .kpi-card:hover {
             transform: translateY(-2px);
@@ -171,7 +166,6 @@
             padding-top: 6px;
         }
 
-        /* Charts grid */
         .charts-section {
             margin-top: 20px;
         }
@@ -261,7 +255,7 @@
                 </label>
                 <input type="file" id="fileInput" accept=".xlsx, .xls, .csv" />
                 <div style="margin-top: 12px;">
-                    <span class="info-msg"><i class="fas fa-info-circle"></i> La feuille doit s'appeler <strong>DATA</strong> avec les colonnes : NomFichier, Domaine, SousDomaine, Statut, Status_2, Date_A_TRAITER, Date_FIN, Date_de_Retraitement, Agent</span>
+                    <span class="info-msg"><i class="fas fa-info-circle"></i> La feuille doit s'appeler <strong>DATA</strong> avec les colonnes : NomFichier, Domaine, SousDomaine, Statut, Status_2, Date_A_TRAITER, Date_FIN, Date_de_Retraitement, Agent, <strong>Temps unitaire</strong> (optionnel mais recommandé pour le graphique dédié)</span>
                 </div>
             </div>
             <i class="fas fa-chart-pie" style="font-size: 2rem; color: #8eb9d0; opacity: 0.7;"></i>
@@ -270,10 +264,7 @@
     </div>
 
     <!-- KPIs dynamiques -->
-    <div id="kpiContainer" class="kpi-grid">
-        <!-- injecté via js -->
-        <div class="kpi-card"><div class="kpi-title"><i class="fas fa-spinner fa-pulse"></i> En attente</div><div class="kpi-value">—</div><div class="kpi-sub">Chargez un fichier</div></div>
-    </div>
+    <div id="kpiContainer" class="kpi-grid"></div>
 
     <div class="charts-section" id="chartsArea" style="display: none;">
         <div class="section-title"><i class="fas fa-chart-simple"></i> Indicateurs visuels & performances</div>
@@ -282,7 +273,7 @@
             <div class="chart-card"><h3><i class="fas fa-chart-bar"></i> Top domaines d'activité</h3><canvas id="domainBarChart" width="400" height="280"></canvas></div>
             <div class="chart-card"><h3><i class="fas fa-calendar-week"></i> Évolution mensuelle (soumissions)</h3><canvas id="timelineChart" width="400" height="280"></canvas></div>
             <div class="chart-card"><h3><i class="fas fa-user-tie"></i> Top 8 collaborateurs (agents)</h3><canvas id="agentBarChart" width="400" height="280"></canvas></div>
-            <div class="chart-card"><h3><i class="fas fa-clock"></i> Délai moyen traitement (jours) par Domaine</h3><canvas id="domainDurationChart" width="400" height="280"></canvas></div>
+            <div class="chart-card"><h3><i class="fas fa-stopwatch"></i> Temps unitaire moyen par Domaine</h3><canvas id="domainDurationChart" width="400" height="280"></canvas></div>
             <div class="chart-card"><h3><i class="fas fa-layer-group"></i> Sous-Domaine (top 7)</h3><canvas id="subdomainChart" width="400" height="280"></canvas></div>
         </div>
     </div>
@@ -298,25 +289,21 @@
         domain: null,
         timeline: null,
         agent: null,
-        domainDuration: null,
+        domainDuration: null,   // désormais affiche la moyenne du temps unitaire par domaine
         subdomain: null
     };
 
     // Fonction utilitaire pour convertir date Excel (numérique ou string)
     function parseExcelDate(value) {
         if (!value || value === "") return null;
-        // Si c'est un nombre (série Excel)
         if (typeof value === 'number') {
-            // Excel serial days since 1900 (Windows) avec correction leap year
             const date = new Date((value - 25569) * 86400 * 1000);
             if (!isNaN(date.getTime())) return date;
         }
-        // Si c'est une chaîne
         if (typeof value === 'string') {
             let trimmed = value.trim();
             let d = new Date(trimmed);
             if (!isNaN(d.getTime())) return d;
-            // tentative format européen avec /
             let parts = trimmed.split(/[\/\-]/);
             if (parts.length === 3) {
                 let day = parseInt(parts[0],10);
@@ -338,6 +325,17 @@
         return Math.floor(diffTime / (1000 * 60 * 60 * 24));
     }
 
+    // extraire un nombre depuis "Temps unitaire" (chiffres, point/virgule)
+    function parseTempsUnitaire(value) {
+        if (value === undefined || value === null || value === "") return null;
+        // si c'est déjà un nombre
+        if (typeof value === 'number') return isNaN(value) ? null : value;
+        // si c'est une chaîne
+        const str = String(value).trim().replace(',', '.');
+        const num = parseFloat(str);
+        return isNaN(num) ? null : num;
+    }
+
     // Traitement principal
     function processExcelData(workbook) {
         const sheetName = "DATA";
@@ -354,7 +352,7 @@
             return;
         }
 
-        // Validation colonnes indispensables (soft)
+        // Colonnes indispensables (soft)
         const requiredCols = ["Domaine", "Statut", "Agent", "Date_A_TRAITER"];
         const firstRow = data[0];
         const missing = requiredCols.filter(col => !(col in firstRow));
@@ -363,7 +361,7 @@
             return;
         }
 
-        // Mapping complet + parsing dates
+        // On construit les enregistrements enrichis avec les dates et TEMPS UNITAIRE
         const records = data.map(row => {
             const rawDateA = row["Date_A_TRAITER"];
             const rawDateFin = row["Date_FIN"];
@@ -379,6 +377,10 @@
             if (dateA && dateRetrait && dateRetrait >= dateA) {
                 retreatmentDelay = daysDiff(dateA, dateRetrait);
             }
+            // Lecture de la colonne "Temps unitaire" (nom exact)
+            let rawTemps = row["Temps unitaire"];
+            let tempsUnitaire = parseTempsUnitaire(rawTemps);
+            
             return {
                 ...row,
                 _dateA: dateA,
@@ -386,6 +388,7 @@
                 _dateRetrait: dateRetrait,
                 _processingDays: processingDays,
                 _retreatmentDelay: retreatmentDelay,
+                _tempsUnitaire: tempsUnitaire,   // valeur numérique ou null
                 domaine: row["Domaine"] ? String(row["Domaine"]).trim() : "Non défini",
                 sousDomaine: row["SousDomaine"] ? String(row["SousDomaine"]).trim() : "Indéfini",
                 statut: row["Statut"] ? String(row["Statut"]).trim() : "Inconnu",
@@ -400,7 +403,6 @@
         const finishedTasks = records.filter(r => r._dateFin !== null);
         const avgProcessingDays = finishedTasks.reduce((acc, r) => acc + (r._processingDays || 0), 0) / (finishedTasks.length || 1);
         
-        // Pending tasks (pas de date de fin ET statut non clos)
         const closedStatusKeywords = ["terminé", "fermé", "clos", "closed", "résolu", "finalisé", "traité"];
         const pendingTasks = records.filter(r => {
             const statutLow = r.statut.toLowerCase();
@@ -410,10 +412,8 @@
         });
         const pendingCount = pendingTasks.length;
         
-        // Retraitements (date de retraitement non null)
         const retreatmentCases = records.filter(r => r._dateRetrait !== null).length;
         
-        // Overdue (tâches en attente avec Date_A_TRAITER > 7 jours)
         const today = new Date();
         today.setHours(0,0,0,0);
         const overdueTasks = pendingTasks.filter(r => {
@@ -422,20 +422,17 @@
             return diffDays !== null && diffDays > 7;
         }).length;
         
-        // Avg retreatment delay (cas avec retraitement)
         const retreatmentDelays = records.filter(r => r._retreatmentDelay !== null).map(r => r._retreatmentDelay);
         const avgRetreatDelay = retreatmentDelays.length ? (retreatmentDelays.reduce((a,b)=>a+b,0)/retreatmentDelays.length).toFixed(1) : 0;
         
-        // Date range (min / max Date_A_TRAITER)
         const validDates = records.map(r => r._dateA).filter(d => d !== null);
         let minDate = validDates.length ? new Date(Math.min(...validDates)) : null;
         let maxDate = validDates.length ? new Date(Math.max(...validDates)) : null;
         const dateRangeStr = (minDate && maxDate) ? `${minDate.toLocaleDateString('fr-FR')} → ${maxDate.toLocaleDateString('fr-FR')}` : "N/A";
         
-        // Taux de complétion (tâches avec date FIN)
         const completionRate = totalRecords ? ((finishedTasks.length / totalRecords) * 100).toFixed(1) : 0;
         
-        // Mise à jour KPI cards
+        // Affichage KPI
         const kpiHtml = `
             <div class="kpi-card"><div class="kpi-title"><i class="fas fa-database"></i> Total dossiers</div><div class="kpi-value">${totalRecords}</div><div class="kpi-sub">intégrés</div></div>
             <div class="kpi-card"><div class="kpi-title"><i class="fas fa-users"></i> Collaborateurs uniques</div><div class="kpi-value">${uniqueAgents}</div><div class="kpi-sub">agents actifs</div></div>
@@ -449,14 +446,14 @@
         document.getElementById("kpiContainer").innerHTML = kpiHtml;
         document.getElementById("chartsArea").style.display = "block";
         
-        // Préparer données pour graphiques
+        // --- Préparation des données pour graphiques ---
         // 1. Statut distribution
         const statutCount = new Map();
         records.forEach(r => { let s = r.statut; statutCount.set(s, (statutCount.get(s)||0)+1); });
         const statusLabels = Array.from(statutCount.keys()).slice(0, 8);
         const statusValues = statusLabels.map(l => statutCount.get(l));
         
-        // 2. Domaine counts (top 8 pour lisibilité)
+        // 2. Domaine counts (top domaines)
         const domaineCount = new Map();
         records.forEach(r => { let d = r.domaine; domaineCount.set(d, (domaineCount.get(d)||0)+1); });
         const sortedDomains = Array.from(domaineCount.entries()).sort((a,b)=>b[1]-a[1]).slice(0,8);
@@ -483,21 +480,26 @@
         const agentLabels = sortedAgents.map(a=>a[0]);
         const agentValues = sortedAgents.map(a=>a[1]);
         
-        // 5. Délai moyen par Domaine (pour les traitements terminés)
-        const domainDurationMap = new Map(); // domaine -> { totalDays, count }
+        // 5. NOUVEAU : Temps unitaire moyen par Domaine (remplace l'ancien délai traitement)
+        const tempsUnitaireParDomaine = new Map(); // domaine -> { somme, count }
         records.forEach(r => {
-            if (r._processingDays !== null && r.domaine) {
+            if (r._tempsUnitaire !== null && r.domaine) {
                 let dom = r.domaine;
-                if (!domainDurationMap.has(dom)) domainDurationMap.set(dom, { total:0, cnt:0 });
-                let curr = domainDurationMap.get(dom);
-                curr.total += r._processingDays;
+                if (!tempsUnitaireParDomaine.has(dom)) tempsUnitaireParDomaine.set(dom, { total: 0, cnt: 0 });
+                let curr = tempsUnitaireParDomaine.get(dom);
+                curr.total += r._tempsUnitaire;
                 curr.cnt += 1;
-                domainDurationMap.set(dom, curr);
+                tempsUnitaireParDomaine.set(dom, curr);
             }
         });
-        let durationEntries = Array.from(domainDurationMap.entries()).map(([dom, {total, cnt}]) => ([dom, total/cnt])).sort((a,b)=>b[1]-a[1]).slice(0,7);
-        const durationDomains = durationEntries.map(d=>d[0]);
-        const durationAvg = durationEntries.map(d=>d[1].toFixed(1));
+        // Transformer en tableau avec moyenne, trier par moyenne décroissante (ou conserver le topX)
+        let unitTimeEntries = Array.from(tempsUnitaireParDomaine.entries())
+            .map(([dom, {total, cnt}]) => ([dom, total / cnt]))
+            .filter(([, avg]) => !isNaN(avg) && isFinite(avg))
+            .sort((a,b) => b[1] - a[1]) // ordre descendant
+            .slice(0, 8); // max 8 domaines pour lisibilité
+        const unitTimeDomains = unitTimeEntries.map(d => d[0]);
+        const unitTimeAvg = unitTimeEntries.map(d => d[1].toFixed(1)); // une décimale
         
         // 6. SousDomaine Top 7
         const subCount = new Map();
@@ -506,7 +508,7 @@
         const subLabels = sortedSub.map(s=>s[0]);
         const subValues = sortedSub.map(s=>s[1]);
         
-        // Destruction anciens graphiques
+        // Destruction des anciens graphiques
         Object.keys(charts).forEach(key => {
             if (charts[key] && typeof charts[key].destroy === 'function') {
                 charts[key].destroy();
@@ -520,33 +522,58 @@
             data: { labels: statusLabels, datasets: [{ data: statusValues, backgroundColor: ['#2c6e9e','#4c9fcf','#ff9f4a','#57a6a1','#a3c9e6','#d9663b','#7f8c8d','#e8b86b'], borderWidth: 0 }] },
             options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'right' } } }
         });
+        
         const ctxDomain = document.getElementById('domainBarChart').getContext('2d');
         charts.domain = new Chart(ctxDomain, {
             type: 'bar', data: { labels: domainLabels, datasets: [{ label: 'Nombre de dossiers', data: domainValues, backgroundColor: '#2c6e9e', borderRadius: 8 }] },
             options: { responsive: true, maintainAspectRatio: true }
         });
+        
         const ctxTimeline = document.getElementById('timelineChart').getContext('2d');
         charts.timeline = new Chart(ctxTimeline, {
             type: 'line', data: { labels: sortedMonths, datasets: [{ label: 'Soumissions', data: timelineValues, borderColor: '#ff7e33', backgroundColor: 'rgba(255,126,51,0.05)', tension: 0.3, fill: true, pointBackgroundColor: '#0066a1' }] },
             options: { responsive: true, maintainAspectRatio: true }
         });
+        
         const ctxAgent = document.getElementById('agentBarChart').getContext('2d');
         charts.agent = new Chart(ctxAgent, {
             type: 'bar', data: { labels: agentLabels, datasets: [{ label: 'Dossiers traités', data: agentValues, backgroundColor: '#00a8b5', borderRadius: 8 }] },
             options: { responsive: true, maintainAspectRatio: true, indexAxis: 'y' }
         });
-        const ctxDuration = document.getElementById('domainDurationChart').getContext('2d');
-        charts.domainDuration = new Chart(ctxDuration, {
-            type: 'bar', data: { labels: durationDomains, datasets: [{ label: 'Délai moyen (jours)', data: durationAvg, backgroundColor: '#498cba' }] },
-            options: { responsive: true, maintainAspectRatio: true }
+        
+        // Graphique de la moyenne du temps unitaire par domaine (ex-domainDurationChart)
+        const ctxUnitTime = document.getElementById('domainDurationChart').getContext('2d');
+        charts.domainDuration = new Chart(ctxUnitTime, {
+            type: 'bar', 
+            data: { 
+                labels: unitTimeDomains.length ? unitTimeDomains : ['Aucune donnée "Temps unitaire"'],
+                datasets: [{ 
+                    label: 'Moyenne du Temps unitaire', 
+                    data: unitTimeDomains.length ? unitTimeAvg : [0], 
+                    backgroundColor: '#498cba',
+                    borderRadius: 8
+                }] 
+            },
+            options: { 
+                responsive: true, 
+                maintainAspectRatio: true,
+                plugins: {
+                    tooltip: { callbacks: { label: (ctx) => `${ctx.raw} unité(s)` } },
+                    legend: { position: 'top' }
+                },
+                scales: { y: { title: { display: true, text: 'Temps unitaire (moyenne)' } } }
+            }
         });
+        
         const ctxSub = document.getElementById('subdomainChart').getContext('2d');
         charts.subdomain = new Chart(ctxSub, {
             type: 'doughnut', data: { labels: subLabels, datasets: [{ data: subValues, backgroundColor: ['#386b7f','#64b5c6','#ffaa66','#b0c4de','#cd5c5c','#6a9c78','#ce93d8'] }] },
             options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'right' } } }
         });
         
-        document.getElementById("uploadFeedback").innerHTML = `<div style="background:#e0f0e8; padding:8px 16px; border-radius:40px; margin-top:12px; color:#1f6e43;"><i class="fas fa-check-circle"></i> Fichier importé avec succès · ${totalRecords} enregistrements analysés (feuille DATA)</div>`;
+        // Message de succès avec mention du temps unitaire
+        let hasTempsInfo = unitTimeEntries.length ? ` ${unitTimeEntries.length} domaines avec données "Temps unitaire".` : ' Aucune valeur numérique trouvée dans la colonne "Temps unitaire".';
+        document.getElementById("uploadFeedback").innerHTML = `<div style="background:#e0f0e8; padding:8px 16px; border-radius:40px; margin-top:12px; color:#1f6e43;"><i class="fas fa-check-circle"></i> Fichier importé avec succès · ${totalRecords} enregistrements analysés (feuille DATA).${hasTempsInfo}</div>`;
     }
     
     // Gestionnaire upload fichier
@@ -576,7 +603,7 @@
         reader.readAsArrayBuffer(file);
     });
     
-    // Affichage initial par défaut message
+    // initialisation par défaut
     document.getElementById("chartsArea").style.display = "none";
     const defaultKpis = `<div class="kpi-card"><div class="kpi-title"><i class="fas fa-cloud-upload-alt"></i> En attente d'import</div><div class="kpi-value">📂</div><div class="kpi-sub">Chargez un fichier Excel contenant une feuille DATA</div></div>
     <div class="kpi-card"><div class="kpi-title"><i class="fas fa-chart-line"></i> KPIs dynamiques</div><div class="kpi-value">---</div><div class="kpi-sub">Indicateurs après extraction</div></div>`;
