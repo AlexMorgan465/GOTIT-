@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html><head><style id="qw-theme">:root {
+  --color-bg: #faf9fc;
+  --color-text: #1a1a1a;
+  --color-navbar-bg: #f9f9fb;
+  --color-bg-chat-view: #fcfcfd;
+  --color-bg-secondary: #ffffff;
+  --color-bg-tertiary: #f9fafb;
+  --color-bg-hover: #f3f4f6;
+  --color-surface: #f9fafb;
+  --color-surface-hover: #f3f4f6;
+  --color-surface-active: #e5e7eb;
+  --color-border: rgba(0, 0, 0, .12);
+  --color-border-light: rgba(0, 0, 0, .06);
+  --color-border-strong: #d1d5db;
+  --color-primary: #4200db;
+  --color-primary-dark: #35009e;
+  --color-primary-light: #8575ff;
+  --color-primary-bg: #e8e6ff;
+  --color-primary-hover-border: #35009e;
+  --color-nav-icon-active: #4200db;
+  --color-nav-hover-border: #4200db;
+  --color-primary-alpha-3: color-mix(in srgb, #4200db 3%, transparent);
+  --color-primary-alpha-5: color-mix(in srgb, #4200db 5%, transparent);
+  --color-primary-alpha-8: color-mix(in srgb, #4200db 8%, transparent);
+  --color-primary-alpha-12: color-mix(in srgb, #4200db 12%, transparent);
+  --color-primary-alpha-15: color-mix(in srgb, #4200db 15%, transparent);
+  --color-primary-alpha-20: color-mix(in srgb, #4200db 20%, transparent);
+  --color-primary-alpha-25: color-mix(in srgb, #4200db 25%, transparent);
+  --color-primary-alpha-30: color-mix(in srgb, #4200db 30%, transparent);
+  --color-primary-alpha-40: color-mix(in srgb, #4200db 40%, transparent);
+  --color-primary-alpha-50: color-mix(in srgb, #4200db 50%, transparent);
+  --color-primary-alpha-60: color-mix(in srgb, #4200db 60%, transparent);
+  --color-primary-subtle: color-mix(in srgb, #4200db 12%, transparent);
+  --color-primary-border: color-mix(in srgb, #4200db 30%, transparent);
+  --color-focus-ring: color-mix(in srgb, #4200db 50%, transparent);
+  --color-sidebar-hover: color-mix(in srgb, #4200db 12%, transparent);
+  --color-accent: #4200db;
+  --color-accent-foreground: #4200db;
+  --color-accent-dark: #35009e;
+  --color-accent-light: #e8e6ff;
+  --color-accent-inverse: #ffffff;
+  --color-link: #4200db;
+  --color-primary-gradient-end: #e8e6ff;
+  --color-primary-bg-solid: #e8e6ff;
+  --color-user-bubble: #F3F3F7;
+  --color-text-secondary: #5e5e5e;
+  --color-text-tertiary: #656871;
+  --color-text-muted: #9ca3af;
+  --color-text-on-primary: #ffffff;
+  --color-success: #00802f;
+  --color-success-dark: #00471e;
+  --color-success-light: #d9ffd6;
+  --color-success-hover: #005c26;
+  --color-success-bg: rgba(0, 128, 47, .1);
+  --color-success-border: rgba(0, 128, 47, .3);
+  --color-success-foreground: #00802f;
+  --color-success-dark-foreground: #00471e;
+  --color-error: #db0000;
+  --color-error-dark: #700000;
+  --color-error-light: #ffe0e0;
+  --color-error-hover: #ffe0e0;
+  --color-error-bg: rgba(219, 0, 0, .08);
+  --color-error-border: #ffe0e0;
+  --color-error-active-border: #db0000;
+  --color-error-foreground: #db0000;
+  --color-error-dark-foreground: #700000;
+  --color-error-inverse: #ffffff;
+  --color-warning: #f2b100;
+  --color-warning-dark: #573a00;
+  --color-warning-light: #fffbbd;
+  --color-warning-hover: #db9200;
+  --color-warning-bg: rgba(242, 177, 0, .1);
+  --color-warning-border: rgba(242, 177, 0, .3);
+  --color-warning-foreground: #f2b100;
+  --color-warning-dark-foreground: #573a00;
+  --color-warning-inverse: #573a00;
+  --color-surface-warning: #fffbbd;
+  --color-text-warning: #573a00;
+  --color-info: #006ce0;
+  --color-info-dark: #002a66;
+  --color-info-light: #d1f1ff;
+  --color-info-hover: #003b8f;
+  --color-info-bg: rgba(0, 108, 224, .08);
+  --color-info-border: rgba(0, 108, 224, .3);
+  --color-info-foreground: #006ce0;
+  --color-info-dark-foreground: #002a66;
+  --color-info-inverse: #ffffff;
+  --color-overlay: rgba(0, 0, 0, .5);
+  --color-shadow: rgba(0, 0, 0, .08);
+  --color-hover: rgba(0, 0, 0, .05);
+  --color-tooltip-bg: rgba(0, 0, 0, .85);
+  --color-tooltip-text: #ffffff;
+  --color-voice-purple: #8575ff;
+  --color-voice-purple-dark: #4200db;
+  --color-voice-purple-light: #8575ff;
+  --color-voice-red: #db0000;
+  --color-voice-red-dark: #700000;
+  --color-voice-amber: #f2b100;
+  --color-voice-purple-glow: rgba(66, 0, 219, .4);
+  --color-voice-red-glow: rgba(219, 0, 0, .4);
+  --font-sans: "Amazon Ember", "Helvetica Neue", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: "SF Mono", "Monaco", "Menlo", "Consolas", monospace;
+  --text-2xs: .5625rem;
+  --text-xs: .625rem;
+  --text-sm: .6875rem;
+  --text-base: .75rem;
+  --text-md: .8125rem;
+  --text-lg: .875rem;
+  --text-xl: 1rem;
+  --text-2xl: 1.125rem;
+  --text-3xl: 1.25rem;
+  --text-4xl: 1.5rem;
+  --text-5xl: 2rem;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-card: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 8px;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, .05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, .08);
+  --color-success-bg-solid: #d9ffd6;
+  --color-error-bg-solid: #ffe0e0;
+  --color-error-border-solid: #ffe0e0;
+  --color-warning-bg-solid: #fffbbd;
+  --color-warning-text: #573a00;
+  --color-info-bg-solid: #d1f1ff;
+  --color-info-bg-solid-alt: #d1f1ff;
+  --color-info-text: #002a66;
+  --color-info-text-alt: #002a66;
+  --color-emerald: #10b981;
+  --color-teal: #4ecdc4;
+  --color-code-bg: #F3F3F7;
+  --color-code-header-bg: #f1f3f5;
+  --color-code-text: #24292e;
+  --color-code-border: #e1e4e8;
+  --color-code-muted: #6a737d;
+  --color-inline-code-bg: #F3F3F7;
+  --color-inline-code-text: #24292e;
+  --color-inline-code-border: #e1e4e8;
+  --color-scrollbar-thumb: #d1d5db;
+  --color-scrollbar-track: transparent;
+  --color-graph-node-text: #333333;
+  --color-graph-node-text-dim: #7F8C8D;
+  --color-graph-edge-default: #95A5A6;
+  --color-graph-edge-cross: #E67E22;
+  --color-graph-edge-text: #666666;
+  --color-graph-edge-stroke: #ffffff;
+  --color-graph-highlight-bg: #FF6B6B;
+  --color-graph-highlight-border: #E74C3C;
+  --color-graph-search-bg: #FFD700;
+  --color-graph-search-border: #FFA500;
+  --color-graph-focus-border: #C0392B;
+  --color-graph-external-border: #95A5A6;
+  --color-graph-cat-file: #3498DB;
+  --color-graph-cat-folder: #7F8C8D;
+  --color-graph-cat-file-aggregate: #2980B9;
+  --color-graph-cat-class: #9B59B6;
+  --color-graph-cat-function: #2ECC71;
+  --color-graph-cat-method: #1ABC9C;
+  --color-graph-cat-variable: #F39C12;
+  --color-graph-cat-import: #D35400;
+  --color-graph-cat-module: #5B6ABF;
+  --color-graph-cat-concept: #E74C3C;
+  --color-graph-cat-person: #FF6B6B;
+  --color-graph-cat-org: #4ECDC4;
+  --color-graph-cat-organization: #4ECDC4;
+  --color-graph-cat-product: #A29BFE;
+  --color-graph-cat-metric: #FD79A8;
+  --color-graph-cat-location: #34495E;
+  --color-graph-cat-date: #E056A0;
+  --color-graph-cat-code: #3498DB;
+  --color-graph-cat-doc: #7F8C8D;
+  --color-graph-cat-url: #00B894;
+  --color-graph-cat-email: #6C5CE7;
+  --color-graph-cat-unknown: #BDC3C7;
+  --color-graph-rel-contains: #BDC3C7;
+  --color-graph-rel-extends: #9B59B6;
+  --color-graph-rel-implements: #3498DB;
+  --color-graph-rel-imports: #E67E22;
+  --color-graph-rel-uses: #2ECC71;
+  --color-graph-rel-calls: #27AE60;
+  --color-graph-rel-references: #F39C12;
+  --color-graph-rel-related-to: #95A5A6;
+  --color-graph-rel-works-on: #E74C3C;
+  --color-graph-rel-owns: #1ABC9C;
+  --color-graph-rel-depends-on: #E67E22;
+  --color-graph-rel-parent-of: #BDC3C7;
+  --qs-content: #ffffff;
+  --qs-main: #f9fafb;
+  --qs-primary-foreground: #1a1a1a;
+  --qs-secondary-foreground: #5e5e5e;
+  --qs-tertiary-foreground: #9ca3af;
+  --qs-placeholder-foreground: #9ca3af;
+  --qs-divider: rgba(0, 0, 0, .12);
+  --qs-default-border: rgba(0, 0, 0, .12);
+  --qs-neutral-soft: #d1d5db;
+  --qs-neutral-gray-50: #f9fafb;
+  --qs-tertiary-background: #f9fafb;
+  --qs-action-hover: rgba(0, 0, 0, .05);
+  --qs-primary-default: #4200db;
+  --qs-primary-dark: #35009e;
+  --qs-primary-light: #e8e6ff;
+  --qs-success-default: #00802f;
+  --qs-error-default: #db0000;
+  --qs-font-sans: "Amazon Ember", "Helvetica Neue", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --react-pdf-text-layer: 1;
+  --highlight-bg-color: rgba(180, 0, 170, 1);
+  --highlight-selected-bg-color: rgba(0, 100, 0, 1);
+  --react-pdf-annotation-layer: 1;
+  --annotation-unfocused-field-background: url("data:image/svg+xml;charset=UTF-8,<svg width='1px' height='1px' xmlns='http://www.w3.org/2000/svg'><rect width='100%' height='100%' style='fill:rgba(0, 54, 255, 0.13);'/></svg>");
+  --input-focus-border-color: Highlight;
+  --input-focus-outline: 1px solid Canvas;
+  --input-unfocused-border-color: transparent;
+  --input-disabled-border-color: transparent;
+  --input-hover-border-color: black;
+  --link-outline: none;
+}
+body { background: var(--color-bg); }</style>
+<meta charset="UTF-8">
+<title>Dashboard GL — Suivi Performance CSA</title>
+<script src="https://cdn.jsdelivr.net/npm/highcharts@12.1.2/highcharts.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highcharts@12.1.2/highcharts-more.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highcharts@12.1.2/modules/accessibility.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highcharts@12.1.2/modules/exporting.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highcharts@12.1.2/modules/export-data.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root {
+  --color-bg: #f8f9fb; --color-bg-secondary: #ffffff; --color-text: #1a1a2e;
+  --color-text-secondary: #44546f; --color-text-muted: #8993a4;
+  --color-border-light: #e8ecf0; --color-border: #dfe1e6;
+  --color-primary: #0052CC; --color-success: #36b37e; --color-error: #de350b;
+  --color-warning: #ff991f; --color-info: #0065ff;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'SF Mono', SFMono-Regular, Consolas, monospace;
+  --radius-sm: 4px; --radius-md: 8px; --radius-lg: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--color-bg); font-family: var(--font-sans); color: var(--color-text); }
+
+.drop-overlay { display:none; position:fixed; inset:0; background:rgba(0,82,204,0.92); z-index:9999; flex-direction:column; align-items:center; justify-content:center; color:white; }
+.drop-overlay.active { display:flex; }
+.drop-overlay i { font-size:64px; margin-bottom:20px; animation:bounce 1s infinite; }
+.drop-overlay h2 { font-size:24px; }
+.drop-overlay p { opacity:0.8; margin-top:8px; }
+@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+
+.header { background:linear-gradient(135deg,#0052CC 0%,#0747A6 100%); color:white; padding:24px 32px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+.header h1 { font-size:22px; font-weight:700; }
+.header .subtitle { opacity:0.85; font-size:13px; margin-top:4px; }
+.header .badge { background:rgba(255,255,255,0.2); border:1px solid rgba(255,255,255,0.3); border-radius:20px; padding:6px 14px; font-size:12px; }
+.header .refresh-info { font-size:11px; opacity:0.7; margin-top:4px; }
+
+.container { max-width:1440px; margin:0 auto; padding:24px; }
+
+.upload-banner { background:linear-gradient(135deg,#e3f2fd,#f3e5f5); border:2px dashed var(--color-primary); border-radius:var(--radius-lg); padding:16px 24px; margin-bottom:20px; text-align:center; cursor:pointer; transition:all 0.2s; }
+.upload-banner:hover { border-color:#0747A6; background:linear-gradient(135deg,#bbdefb,#e1bee7); }
+.upload-banner.loaded { border-color:var(--color-success); background:linear-gradient(135deg,#e8f5e9,#f1f8e9); }
+.upload-banner i { font-size:24px; color:var(--color-primary); margin-bottom:4px; }
+.upload-banner.loaded i { color:var(--color-success); }
+.upload-banner h3 { font-size:13px; color:var(--color-text); }
+.upload-banner p { font-size:11px; color:var(--color-text-muted); }
+
+.kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-bottom:24px; }
+.kpi-card { background:var(--color-bg-secondary); border:1px solid var(--color-border-light); border-radius:var(--radius-lg); padding:18px; position:relative; overflow:hidden; }
+.kpi-card::before { content:''; position:absolute; top:0;left:0;right:0; height:3px; }
+.kpi-card.primary::before { background:var(--color-primary); }
+.kpi-card.success::before { background:var(--color-success); }
+.kpi-card.warning::before { background:var(--color-warning); }
+.kpi-card.info::before { background:var(--color-info); }
+.kpi-card.error::before { background:var(--color-error); }
+.kpi-card .icon { font-size:18px; margin-bottom:6px; opacity:0.7; }
+.kpi-card .label { color:var(--color-text-muted); font-size:10px; text-transform:uppercase; letter-spacing:0.06em; font-weight:500; }
+.kpi-card .value { font-size:24px; font-weight:700; font-family:var(--font-mono); margin:3px 0; }
+.kpi-card .delta { font-size:11px; font-weight:500; }
+.kpi-card .delta.up { color:var(--color-success); }
+.kpi-card .delta.down { color:var(--color-error); }
+
+.section { margin-bottom:24px; }
+.section-title { font-size:15px; font-weight:600; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+.section-title i { color:var(--color-primary); }
+
+.charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:24px; }
+.chart-card { background:var(--color-bg-secondary); border:1px solid var(--color-border-light); border-radius:var(--radius-lg); padding:14px; }
+
+.metrics-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; margin-bottom:24px; }
+
+.tabs { display:flex; gap:4px; margin-bottom:14px; flex-wrap:wrap; }
+.tab { padding:7px 14px; border-radius:var(--radius-sm); font-size:12px; cursor:pointer; border:1px solid var(--color-border-light); background:white; color:var(--color-text-secondary); transition:all 0.15s; }
+.tab:hover { border-color:var(--color-primary); color:var(--color-primary); }
+.tab.active { background:var(--color-primary); color:white; border-color:var(--color-primary); }
+
+.table-container { background:var(--color-bg-secondary); border:1px solid var(--color-border-light); border-radius:var(--radius-lg); overflow:hidden; }
+.table-toolbar { padding:10px 14px; border-bottom:1px solid var(--color-border-light); display:flex; align-items:center; gap:12px; }
+.search-input { border:1px solid var(--color-border); border-radius:var(--radius-sm); padding:6px 10px 6px 30px; font-size:12px; outline:none; width:200px; background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' viewBox='0 0 24 24' fill='none' stroke='%238993a4' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat 9px center; }
+.search-input:focus { border-color:var(--color-primary); }
+table { width:100%; border-collapse:collapse; font-size:11px; }
+th { text-align:left; color:var(--color-text-muted); font-weight:600; padding:9px 12px; border-bottom:1px solid var(--color-border); text-transform:uppercase; font-size:9px; letter-spacing:0.05em; cursor:pointer; user-select:none; }
+th:hover { color:var(--color-primary); }
+td { padding:9px 12px; border-bottom:1px solid var(--color-border-light); font-family:var(--font-mono); font-size:11px; }
+tr:hover td { background:#f4f6f9; }
+.rank { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; font-size:9px; font-weight:700; }
+.rank.gold { background:#fff3cd; color:#856404; }
+.rank.silver { background:#e8edf2; color:#495057; }
+.rank.bronze { background:#fde8d8; color:#854d0e; }
+.badge-q { display:inline-block; padding:2px 7px; border-radius:10px; font-size:10px; font-weight:600; }
+.badge-q.high { background:#dcfce7; color:#166534; }
+.badge-q.mid { background:#fef3c7; color:#92400e; }
+.badge-q.low { background:#fee2e2; color:#991b1b; }
+
+.footer { text-align:center; padding:18px; color:var(--color-text-muted); font-size:10px; border-top:1px solid var(--color-border-light); margin-top:24px; }
+
+@media (max-width:900px) { .charts-grid,.metrics-grid { grid-template-columns:1fr; } .kpi-grid { grid-template-columns:repeat(2,1fr); } }
+</style>
+</head>
+<body>
+<div class="drop-overlay" id="dropOverlay"><i class="fa-solid fa-file-excel"></i><h2>Déposez votre fichier Excel ici</h2><p>Le dashboard sera mis à jour instantanément</p></div>
+
+<div class="header">
+  <div><h1><i class="fa-solid fa-chart-line"></i> Dashboard GL — Suivi Performance</h1><div class="subtitle">Équipe GL — Métriques clés : DMT | Présence | CA/FQ | RDV/CA | Qualité</div></div>
+  <div style="text-align:right"><div class="badge"><i class="fa-solid fa-sync-alt"></i> Drag &amp; Drop Excel</div><div class="refresh-info" id="lastUpdate"></div></div>
+</div>
+
+<div class="container">
+  <div class="upload-banner" id="uploadBanner" onclick="document.getElementById('fileInput').click()">
+    <i class="fa-solid fa-cloud-arrow-up"></i>
+    <h3>📂 Glissez votre fichier Excel ici ou cliquez pour sélectionner</h3>
+    <p>Mise à jour instantanée — Aucune installation requise — Données 100% locales</p>
+  </div>
+  <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
+
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <!-- Focus Metrics Section -->
+  <div class="section">
+    <div class="section-title"><i class="fa-solid fa-bullseye"></i> Métriques Clés — Évolution Mensuelle</div>
+    <div class="charts-grid">
+      <div class="chart-card"><div id="chartDMT" style="height:280px"></div></div>
+      <div class="chart-card"><div id="chartQualite" style="height:280px"></div></div>
+      <div class="chart-card"><div id="chartPresence" style="height:280px"></div></div>
+      <div class="chart-card"><div id="chartRDVCA" style="height:280px"></div></div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card"><div id="chartCAFQ" style="height:280px"></div></div>
+      <div class="chart-card"><div id="chartQualifH" style="height:280px"></div></div>
+    </div>
+  </div>
+
+  <!-- Evolution par CSA -->
+  <div class="section">
+    <div class="section-title"><i class="fa-solid fa-arrow-trend-up"></i> Suivi Individuel CSA</div>
+    <div class="tabs" id="evoTabs">
+      <div class="tab active" data-chart="qualite">% Qualité</div>
+      <div class="tab" data-chart="dmt">DMT</div>
+      <div class="tab" data-chart="presence">% Présence</div>
+      <div class="tab" data-chart="rdvca">% RDV/CA</div>
+      <div class="tab" data-chart="cafq">% CA/FQ</div>
+    </div>
+    <div class="chart-card"><div id="chartEvolution" style="height:400px"></div></div>
+  </div>
+
+  <!-- Classement -->
+  <div class="section">
+    <div class="section-title"><i class="fa-solid fa-trophy"></i> Classement CSA — <span id="classementMonth"></span></div>
+    <div class="table-container">
+      <div class="table-toolbar">
+        <input type="text" class="search-input" id="searchAgent" placeholder="Rechercher...">
+        <span style="color:var(--color-text-muted);font-size:11px" id="agentCount"></span>
+      </div>
+      <div style="overflow-x:auto">
+        <table id="classementTable">
+          <thead><tr><th>#</th><th>Collaborateur</th><th>Qualité</th><th>DMT</th><th>Présence</th><th>RDV/CA</th><th>CA/FQ</th><th>Fiches</th></tr></thead>
+          <tbody id="classementBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <p>Dashboard GL — Suivi Performance CSA | <strong>Glissez votre Excel pour mettre à jour</strong> — 100% navigateur, aucune donnée envoyée</p>
+</div>
+
+<script>
+let DATA = {"months": ["Janvier", "Février", "Mars", "Avril", "Mai"], "lastMonth": "Mai", "synthese": [{"mois": "Janvier", "nb_fiches": 15920, "nb_agents": 27, "avg_dmt_secs": 167.8, "avg_qualif": 4.11, "avg_qualite": 94.4, "avg_presence": 99.56, "avg_cafq": 32.95, "avg_rdvca": 83.53, "avg_pause": 8.45}, {"mois": "Février", "nb_fiches": 26602, "nb_agents": 31, "avg_dmt_secs": 144.0, "avg_qualif": 5.88, "avg_qualite": 93.71, "avg_presence": 98.01, "avg_cafq": 28.05, "avg_rdvca": 83.2, "avg_pause": 8.96}, {"mois": "Mars", "nb_fiches": 19016, "nb_agents": 30, "avg_dmt_secs": 164.6, "avg_qualif": 3.8, "avg_qualite": 94.47, "avg_presence": 99.11, "avg_cafq": 35.52, "avg_rdvca": 85.71, "avg_pause": 10.3}, {"mois": "Avril", "nb_fiches": 16196, "nb_agents": 33, "avg_dmt_secs": 260.6, "avg_qualif": 3.08, "avg_qualite": 92.95, "avg_presence": 98.89, "avg_cafq": 46.38, "avg_rdvca": 84.1, "avg_pause": 8.02}, {"mois": "Mai", "nb_fiches": 4093, "nb_agents": 29, "avg_dmt_secs": 264.5, "avg_qualif": 2.65, "avg_qualite": 94.13, "avg_presence": 99.73, "avg_cafq": 49.91, "avg_rdvca": 83.94, "avg_pause": 8.0}], "classement": [{"agent": "EL HARROUCHI CHAIMAE", "nb_fiches": 141, "dmt_secs": 191.1, "pct_qualite": 100.0, "pct_presence": 100.0, "pct_cafq": 37.59, "pct_rdvca": 86.79, "qualif_horaire": 3.17}, {"agent": "IHASSANE IKRAM", "nb_fiches": 137, "dmt_secs": 118.3, "pct_qualite": 100.0, "pct_presence": 100.0, "pct_cafq": 33.58, "pct_rdvca": 60.87, "qualif_horaire": 2.19}, {"agent": "DERKAOUI AMAL", "nb_fiches": 192, "dmt_secs": 274.8, "pct_qualite": 98.79, "pct_presence": 100.0, "pct_cafq": 47.4, "pct_rdvca": 84.62, "qualif_horaire": 3.09}, {"agent": "LAFDIL NADA", "nb_fiches": 112, "dmt_secs": 277.3, "pct_qualite": 98.3, "pct_presence": 100.0, "pct_cafq": 50.0, "pct_rdvca": 94.64, "qualif_horaire": 2.52}, {"agent": "EL HOUSSAINI HOUDA", "nb_fiches": 229, "dmt_secs": 149.1, "pct_qualite": 97.09, "pct_presence": 100.0, "pct_cafq": 39.74, "pct_rdvca": 81.32, "qualif_horaire": 3.66}, {"agent": "GUEYE MOUHAMED", "nb_fiches": 158, "dmt_secs": 196.9, "pct_qualite": 96.6, "pct_presence": 100.0, "pct_cafq": 30.38, "pct_rdvca": 93.75, "qualif_horaire": 3.57}, {"agent": "KANTAOUI SALMA", "nb_fiches": 117, "dmt_secs": 152.8, "pct_qualite": 96.6, "pct_presence": 98.67, "pct_cafq": 24.79, "pct_rdvca": 96.55, "qualif_horaire": 2.19}, {"agent": "MELLAHI YOUSSEF", "nb_fiches": 143, "dmt_secs": 278.9, "pct_qualite": 96.6, "pct_presence": 99.65, "pct_cafq": 46.85, "pct_rdvca": 85.07, "qualif_horaire": 2.73}, {"agent": "RACHAD NAWAR", "nb_fiches": 166, "dmt_secs": 217.3, "pct_qualite": 96.6, "pct_presence": 98.14, "pct_cafq": 37.35, "pct_rdvca": 82.26, "qualif_horaire": 3.14}, {"agent": "AZHARI ABDELHAMID", "nb_fiches": 145, "dmt_secs": 333.7, "pct_qualite": 96.05, "pct_presence": 0, "pct_cafq": 60.0, "pct_rdvca": 79.31, "qualif_horaire": 2.72}, {"agent": "AIT ADDI KHADIJA", "nb_fiches": 81, "dmt_secs": 258.8, "pct_qualite": 94.9, "pct_presence": 100.0, "pct_cafq": 58.02, "pct_rdvca": 80.85, "qualif_horaire": 1.61}, {"agent": "BENSAR ANAS", "nb_fiches": 60, "dmt_secs": 311.8, "pct_qualite": 94.9, "pct_presence": 0, "pct_cafq": 80.0, "pct_rdvca": 89.58, "qualif_horaire": 1.36}, {"agent": "EL HOUJJAJI SOUFIYANE", "nb_fiches": 143, "dmt_secs": 361.5, "pct_qualite": 94.9, "pct_presence": 0, "pct_cafq": 56.64, "pct_rdvca": 85.19, "qualif_horaire": 3.24}, {"agent": "TOURE ABIBOU", "nb_fiches": 190, "dmt_secs": 288.8, "pct_qualite": 94.62, "pct_presence": 100.0, "pct_cafq": 46.84, "pct_rdvca": 89.89, "qualif_horaire": 3.55}, {"agent": "NUNEZ LUCIEN BERNARD", "nb_fiches": 219, "dmt_secs": 353.8, "pct_qualite": 94.24, "pct_presence": 0, "pct_cafq": 42.01, "pct_rdvca": 83.7, "qualif_horaire": 3.77}, {"agent": "ELBOUTI AYOUB", "nb_fiches": 83, "dmt_secs": 264.9, "pct_qualite": 93.77, "pct_presence": 0, "pct_cafq": 62.65, "pct_rdvca": 73.08, "qualif_horaire": 1.56}, {"agent": "MOUSKEBA DALAFINA SIDIBE", "nb_fiches": 157, "dmt_secs": 323.3, "pct_qualite": 93.2, "pct_presence": 100.0, "pct_cafq": 58.6, "pct_rdvca": 72.83, "qualif_horaire": 2.94}, {"agent": "NIANG NDEYE ABSA", "nb_fiches": 189, "dmt_secs": 283.9, "pct_qualite": 92.93, "pct_presence": 100.0, "pct_cafq": 52.38, "pct_rdvca": 87.88, "qualif_horaire": 3.55}, {"agent": "SECK DIARRA", "nb_fiches": 86, "dmt_secs": 312.3, "pct_qualite": 92.63, "pct_presence": 0, "pct_cafq": 67.44, "pct_rdvca": 87.93, "qualif_horaire": 1.59}, {"agent": "BOURABAA HASSAN", "nb_fiches": 126, "dmt_secs": 403.3, "pct_qualite": 92.54, "pct_presence": 0, "pct_cafq": 68.25, "pct_rdvca": 83.72, "qualif_horaire": 2.03}, {"agent": "BOULHROUD SALMA", "nb_fiches": 179, "dmt_secs": 403.2, "pct_qualite": 92.06, "pct_presence": 98.44, "pct_cafq": 56.42, "pct_rdvca": 82.18, "qualif_horaire": 2.92}, {"agent": "DIOUF OUSMANE", "nb_fiches": 233, "dmt_secs": 136.3, "pct_qualite": 91.99, "pct_presence": 100.0, "pct_cafq": 29.18, "pct_rdvca": 82.35, "qualif_horaire": 3.72}, {"agent": "AINELKITANE ZINEB", "nb_fiches": 78, "dmt_secs": 237.0, "pct_qualite": 91.93, "pct_presence": 0, "pct_cafq": 60.26, "pct_rdvca": 89.36, "qualif_horaire": 1.46}, {"agent": "AIT LARBI HIND", "nb_fiches": 173, "dmt_secs": 271.5, "pct_qualite": 91.78, "pct_presence": 100.0, "pct_cafq": 46.24, "pct_rdvca": 83.75, "qualif_horaire": 3.27}, {"agent": "GUEYE GORA", "nb_fiches": 134, "dmt_secs": 253.5, "pct_qualite": 89.9, "pct_presence": 100.0, "pct_cafq": 47.01, "pct_rdvca": 80.95, "qualif_horaire": 3.02}, {"agent": "NEMMAOUI MOUNIRA", "nb_fiches": 61, "dmt_secs": 302.8, "pct_qualite": 89.9, "pct_presence": 0, "pct_cafq": 62.3, "pct_rdvca": 86.84, "qualif_horaire": 1.38}, {"agent": "ZIOUI DOUNIA", "nb_fiches": 144, "dmt_secs": 136.5, "pct_qualite": 89.9, "pct_presence": 100.0, "pct_cafq": 20.83, "pct_rdvca": 83.33, "qualif_horaire": 2.72}, {"agent": "ZAKI OMAR", "nb_fiches": 162, "dmt_secs": 284.8, "pct_qualite": 88.78, "pct_presence": 100.0, "pct_cafq": 62.96, "pct_rdvca": 77.45, "qualif_horaire": 3.06}, {"agent": "QARBOUI AYMANE", "nb_fiches": 55, "dmt_secs": 291.0, "pct_qualite": 88.3, "pct_presence": 0, "pct_cafq": 61.82, "pct_rdvca": 88.24, "qualif_horaire": 1.26}], "evo_dmt": {"AINELKITANE ZINEB": [null, null, null, 336.6, 237.0], "AIT ADDI KHADIJA": [153.0, 102.0, 188.2, 287.4, 258.8], "AIT LARBI HIND": [165.9, 131.5, 162.2, 242.0, 271.5], "AL AOUAQUI BOUCHRA": [184.0, 106.0, 224.7, 213.0, null], "ALAMI SOUMAYYA": [null, 235.5, 158.1, null, null], "AZHARI ABDELHAMID": [257.6, 213.1, 192.4, 270.8, 333.7], "BENSAR ANAS": [null, null, null, 268.9, 311.8], "BOULHROUD SALMA": [null, 279.4, 208.3, 325.8, 403.2], "BOUMEZGANE SOUKAINA": [279.5, null, null, null, null], "BOURABAA HASSAN": [null, 299.6, 231.7, 315.4, 403.3], "COUNDOUL BIRANE": [123.3, 99.4, null, null, null], "DERKAOUI AMAL": [211.6, 156.1, 226.1, 291.7, 274.8], "DIATTA AISSATOU": [null, 137.6, 115.1, null, null], "DIOP ABDOU": [211.7, 121.6, 131.4, null, null], "DIOUF OUSMANE": [147.2, 99.6, 97.0, 161.5, 136.3], "EL HARROUCHI CHAIMAE": [158.7, 99.0, 150.2, 234.1, 191.1], "EL HOUJJAJI SOUFIYANE": [189.7, 129.6, 165.5, 329.0, 361.5], "EL HOUSSAINI HOUDA": [122.7, 93.3, 121.1, 180.8, 149.1], "ELBOUTI AYOUB": [null, null, null, 291.4, 264.9], "GUEYE GORA": [106.8, 97.2, 144.9, 244.3, 253.5], "GUEYE MOUHAMED": [95.8, 88.3, 90.3, 163.4, 196.9], "IHASSANE IKRAM": [121.6, 100.3, 80.9, 128.2, 118.3], "IKRADINE RIME": [110.3, 75.6, 111.4, 141.7, null], "KANTAOUI SALMA": [135.5, 89.4, 237.6, 212.6, 152.8], "LAFDIL NADA": [219.0, 120.9, 156.3, 290.2, 277.3], "MELLAHI YOUSSEF": [159.0, 130.5, 231.7, 257.8, 278.9], "MOUSKEBA DALAFINA SIDIBE": [null, 304.2, 198.3, 305.3, 323.3], "MRANI REDA": [228.2, 213.3, 184.2, 287.4, null], "NEMMAOUI MOUNIRA": [null, null, null, 316.0, 302.8], "NIANG NDEYE ABSA": [125.1, 106.7, 169.6, 283.2, 283.9], "NUNEZ LUCIEN BERNARD": [232.4, 224.2, 188.6, 343.0, 353.8], "QARBOUI AYMANE": [null, null, null, 341.7, 291.0], "RACHAD NAWAR": [172.4, 124.1, 156.2, 208.3, 217.3], "SECK DIARRA": [null, null, null, 326.1, 312.3], "TOURE ABIBOU": [143.6, 103.1, 147.5, 265.3, 288.8], "ZAKI OMAR": [149.4, 112.4, 158.9, 288.7, 284.8], "ZIOUI DOUNIA": [155.1, 113.8, 138.9, 195.2, 136.5], "ZITOUNI LAMYA": [170.6, 155.4, 171.4, 253.5, null]}, "evo_qualite": {"AINELKITANE ZINEB": [null, null, null, 91.75, 91.93], "AIT ADDI KHADIJA": [93.55, 96.07, 97.1, 94.59, 94.9], "AIT LARBI HIND": [92.67, 95.5, 91.18, 91.73, 91.78], "AL AOUAQUI BOUCHRA": [96.33, 97.87, 97.93, 96.22, null], "ALAMI SOUMAYYA": [null, 91.0, 92.02, null, null], "AZHARI ABDELHAMID": [null, null, 94.01, 91.98, 96.05], "BENSAR ANAS": [null, null, null, 92.02, 94.9], "BOULHROUD SALMA": [null, 92.1, 93.75, 92.63, 92.06], "BOUMEZGANE SOUKAINA": [98.3, null, null, null, null], "BOURABAA HASSAN": [null, 93.2, 93.43, 92.85, 92.54], "COUNDOUL BIRANE": [92.0, 94.9, null, null, null], "DERKAOUI AMAL": [96.2, 99.15, 98.62, 96.94, 98.79], "DIATTA AISSATOU": [null, 81.6, null, null, null], "DIOP ABDOU": [92.36, 97.47, 99.06, null, null], "DIOUF OUSMANE": [92.25, 90.77, 93.06, 92.71, 91.99], "EL HARROUCHI CHAIMAE": [97.45, 96.82, 99.15, 98.39, 100.0], "EL HOUJJAJI SOUFIYANE": [89.33, 89.08, 91.6, 92.56, 94.9], "EL HOUSSAINI HOUDA": [97.62, 97.9, 97.43, 97.83, 97.09], "ELBOUTI AYOUB": [null, null, null, 90.41, 93.77], "GUEYE GORA": [91.87, 90.95, 97.14, 95.64, 89.9], "GUEYE MOUHAMED": [97.37, 93.7, 97.26, 95.38, 96.6], "IHASSANE IKRAM": [96.32, 95.6, 98.79, 96.05, 100.0], "IKRADINE RIME": [91.3, 93.41, 91.52, 91.89, null], "KANTAOUI SALMA": [95.04, 96.6, 95.4, 95.44, 96.6], "LAFDIL NADA": [99.71, 98.72, 99.15, 96.82, 98.3], "MELLAHI YOUSSEF": [94.61, 93.83, 97.79, 95.09, 96.6], "MOUSKEBA DALAFINA SIDIBE": [null, 91.6, 85.04, 89.81, 93.2], "MRANI REDA": [null, 83.2, 76.95, 81.0, null], "NEMMAOUI MOUNIRA": [null, null, null, 90.49, 89.9], "NIANG NDEYE ABSA": [93.25, 96.62, 96.5, 95.32, 92.93], "NUNEZ LUCIEN BERNARD": [93.2, 93.34, 94.69, 94.48, 94.24], "QARBOUI AYMANE": [null, null, null, 90.09, 88.3], "RACHAD NAWAR": [96.9, 97.87, 96.83, 93.81, 96.6], "SECK DIARRA": [null, null, null, 88.18, 92.63], "TOURE ABIBOU": [97.3, 98.32, 97.42, 94.31, 94.62], "ZAKI OMAR": [88.87, 90.47, 88.29, 86.25, 88.78], "ZIOUI DOUNIA": [94.2, 90.5, 93.94, 89.6, 89.9], "ZITOUNI LAMYA": [91.98, 93.2, 94.69, 95.18, null]}, "evo_presence": {"AIT ADDI KHADIJA": [99.76, 98.28, 99.89, 99.95, 100.0], "AIT LARBI HIND": [100.0, 99.0, 98.31, 99.84, 100.0], "AL AOUAQUI BOUCHRA": [99.93, 99.98, 100.0, 97.48, null], "ALAMI SOUMAYYA": [null, 100.0, 98.38, null, null], "BOULHROUD SALMA": [null, 100.0, 99.75, 99.92, 98.44], "BOUMEZGANE SOUKAINA": [100.0, null, null, null, null], "COUNDOUL BIRANE": [100.0, 100.0, null, null, null], "DERKAOUI AMAL": [98.46, 99.96, 99.91, 95.45, 100.0], "DIATTA AISSATOU": [null, 77.16, 99.2, null, null], "DIOP ABDOU": [99.93, 99.98, 97.51, null, null], "DIOUF OUSMANE": [99.94, 100.0, 99.31, 99.98, 100.0], "EL HARROUCHI CHAIMAE": [100.0, 100.0, 99.87, 100.0, 100.0], "EL HOUSSAINI HOUDA": [100.0, 100.0, 98.96, 99.98, 100.0], "GUEYE GORA": [100.0, 95.77, 97.65, 98.36, 100.0], "GUEYE MOUHAMED": [99.92, 99.84, 99.51, 98.41, 100.0], "IHASSANE IKRAM": [98.88, 99.98, 98.67, 100.0, 100.0], "IKRADINE RIME": [97.03, 91.66, 96.16, 89.62, null], "KANTAOUI SALMA": [98.63, 92.17, 99.58, 99.94, 98.67], "LAFDIL NADA": [100.0, 100.0, 99.98, 100.0, 100.0], "MELLAHI YOUSSEF": [99.87, 98.57, 98.83, 99.74, 99.65], "MOUSKEBA DALAFINA SIDIBE": [null, 99.9, 99.63, 96.96, 100.0], "NIANG NDEYE ABSA": [99.94, 100.0, 99.38, 99.97, 100.0], "RACHAD NAWAR": [99.98, 100.0, 99.96, 99.98, 98.14], "TOURE ABIBOU": [98.95, 100.0, 100.0, 100.0, 100.0], "ZAKI OMAR": [100.0, 100.0, 99.87, 100.0, 100.0], "ZIOUI DOUNIA": [98.88, 96.38, 99.26, 100.0, 100.0], "ZITOUNI LAMYA": [99.88, 99.53, 98.08, 100.0, null]}, "evo_cafq": {"AINELKITANE ZINEB": [null, null, null, 58.79, 60.26], "AIT ADDI KHADIJA": [31.41, 18.73, 34.7, 43.23, 58.02], "AIT LARBI HIND": [33.45, 26.49, 27.25, 41.16, 46.24], "AL AOUAQUI BOUCHRA": [31.37, 22.74, 40.14, 41.85, null], "ALAMI SOUMAYYA": [null, 45.26, 44.27, null, null], "AZHARI ABDELHAMID": [27.45, 40.66, 45.22, 53.19, 60.0], "BENSAR ANAS": [null, null, null, 59.57, 80.0], "BOULHROUD SALMA": [null, 60.44, 49.67, 56.06, 56.42], "BOUMEZGANE SOUKAINA": [100.0, null, null, null, null], "BOURABAA HASSAN": [null, 48.75, 52.16, 55.5, 68.25], "COUNDOUL BIRANE": [31.79, 18.8, null, null, null], "DERKAOUI AMAL": [32.85, 34.5, 40.25, 45.21, 47.4], "DIATTA AISSATOU": [null, 17.14, 44.92, null, null], "DIOP ABDOU": [43.07, 25.41, 31.37, null, null], "DIOUF OUSMANE": [27.84, 20.0, 22.0, 36.3, 29.18], "EL HARROUCHI CHAIMAE": [32.28, 22.65, 41.16, 46.68, 37.59], "EL HOUJJAJI SOUFIYANE": [38.12, 26.39, 35.61, 47.15, 56.64], "EL HOUSSAINI HOUDA": [28.93, 21.57, 30.56, 38.75, 39.74], "ELBOUTI AYOUB": [null, null, null, 58.62, 62.65], "GUEYE GORA": [21.52, 18.06, 33.85, 45.34, 47.01], "GUEYE MOUHAMED": [21.79, 13.38, 17.04, 29.51, 30.38], "IHASSANE IKRAM": [24.13, 21.94, 21.43, 34.08, 33.58], "IKRADINE RIME": [21.17, 13.81, 12.23, 9.24, null], "KANTAOUI SALMA": [27.45, 20.26, 34.36, 33.13, 24.79], "LAFDIL NADA": [40.03, 22.48, 34.96, 43.91, 50.0], "MELLAHI YOUSSEF": [29.7, 24.18, 33.78, 47.04, 46.85], "MOUSKEBA DALAFINA SIDIBE": [null, 57.35, 49.15, 54.9, 58.6], "MRANI REDA": [35.4, 39.07, 38.59, 45.61, null], "NEMMAOUI MOUNIRA": [null, null, null, 60.19, 62.3], "NIANG NDEYE ABSA": [24.78, 22.09, 41.73, 48.99, 52.38], "NUNEZ LUCIEN BERNARD": [28.66, 38.71, 40.0, 46.63, 42.01], "QARBOUI AYMANE": [null, null, null, 63.83, 61.82], "RACHAD NAWAR": [34.45, 24.92, 35.62, 40.31, 37.35], "SECK DIARRA": [null, null, null, 65.95, 67.44], "TOURE ABIBOU": [29.11, 27.56, 33.16, 43.97, 46.84], "ZAKI OMAR": [37.93, 27.34, 42.82, 56.62, 62.96], "ZIOUI DOUNIA": [26.19, 17.32, 23.61, 33.62, 20.83], "ZITOUNI LAMYA": [28.91, 31.4, 33.84, 45.53, null]}, "evo_rdvca": {"AINELKITANE ZINEB": [null, null, null, 89.72, 89.36], "AIT ADDI KHADIJA": [81.67, 88.97, 89.63, 87.31, 80.85], "AIT LARBI HIND": [71.78, 78.01, 77.65, 70.66, 83.75], "AL AOUAQUI BOUCHRA": [91.45, 94.22, 93.82, 92.52, null], "ALAMI SOUMAYYA": [null, 86.05, 87.41, null, null], "AZHARI ABDELHAMID": [98.21, 81.46, 80.95, 73.57, 79.31], "BENSAR ANAS": [null, null, null, 94.16, 89.58], "BOULHROUD SALMA": [null, 80.0, 70.94, 76.82, 82.18], "BOUMEZGANE SOUKAINA": [100.0, null, null, null, null], "BOURABAA HASSAN": [null, 74.36, 87.05, 83.78, 83.72], "COUNDOUL BIRANE": [89.39, 93.18, null, null, null], "DERKAOUI AMAL": [87.29, 92.99, 92.44, 90.71, 84.62], "DIATTA AISSATOU": [null, 66.67, 77.36, null, null], "DIOP ABDOU": [81.85, 89.77, 85.15, null, null], "DIOUF OUSMANE": [72.04, 83.57, 64.8, 77.04, 82.35], "EL HARROUCHI CHAIMAE": [90.23, 90.06, 92.69, 92.89, 86.79], "EL HOUJJAJI SOUFIYANE": [79.76, 83.33, 83.83, 81.12, 85.19], "EL HOUSSAINI HOUDA": [83.26, 77.14, 84.19, 89.52, 81.32], "ELBOUTI AYOUB": [null, null, null, 81.37, 73.08], "GUEYE GORA": [80.49, 75.27, 80.23, 78.85, 80.95], "GUEYE MOUHAMED": [90.44, 94.48, 91.97, 92.69, 93.75], "IHASSANE IKRAM": [64.71, 62.3, 100.0, 54.1, 60.87], "IKRADINE RIME": [86.5, 81.33, 97.44, 90.91, null], "KANTAOUI SALMA": [85.71, 88.71, 92.86, 98.18, 96.55], "LAFDIL NADA": [93.93, 85.61, 91.76, 88.24, 94.64], "MELLAHI YOUSSEF": [85.95, 85.31, 86.14, 84.77, 85.07], "MOUSKEBA DALAFINA SIDIBE": [null, 87.18, 83.1, 76.1, 72.83], "MRANI REDA": [82.46, 83.42, 86.67, 87.18, null], "NEMMAOUI MOUNIRA": [null, null, null, 81.89, 86.84], "NIANG NDEYE ABSA": [79.3, 85.57, 84.7, 84.93, 87.88], "NUNEZ LUCIEN BERNARD": [77.78, 86.31, 80.94, 79.04, 83.7], "QARBOUI AYMANE": [null, null, null, 94.17, 88.24], "RACHAD NAWAR": [79.24, 88.33, 84.62, 79.09, 82.26], "SECK DIARRA": [null, null, null, 87.7, 87.93], "TOURE ABIBOU": [87.44, 88.37, 92.05, 92.52, 89.89], "ZAKI OMAR": [62.23, 54.68, 67.06, 67.61, 77.45], "ZIOUI DOUNIA": [88.31, 88.7, 95.65, 87.07, 83.33], "ZITOUNI LAMYA": [83.78, 83.81, 88.35, 89.07, null]}, "agents_list": ["AINELKITANE ZINEB", "AIT ADDI KHADIJA", "AIT LARBI HIND", "AL AOUAQUI BOUCHRA", "ALAMI SOUMAYYA", "AZHARI ABDELHAMID", "BENSAR ANAS", "BOULHROUD SALMA", "BOUMEZGANE SOUKAINA", "BOURABAA HASSAN", "COUNDOUL BIRANE", "DERKAOUI AMAL", "DIATTA AISSATOU", "DIOP ABDOU", "DIOUF OUSMANE", "EL HARROUCHI CHAIMAE", "EL HOUJJAJI SOUFIYANE", "EL HOUSSAINI HOUDA", "ELBOUTI AYOUB", "GUEYE GORA", "GUEYE MOUHAMED", "IHASSANE IKRAM", "IKRADINE RIME", "KANTAOUI SALMA", "LAFDIL NADA", "MELLAHI YOUSSEF", "MOUSKEBA DALAFINA SIDIBE", "MRANI REDA", "NEMMAOUI MOUNIRA", "NIANG NDEYE ABSA", "NUNEZ LUCIEN BERNARD", "QARBOUI AYMANE", "RACHAD NAWAR", "SECK DIARRA", "TOURE ABIBOU", "ZAKI OMAR", "ZIOUI DOUNIA", "ZITOUNI LAMYA"]};
+
+// ===== EXCEL PARSER =====
+function parseExcel(buf) {
+  const wb = XLSX.read(buf, {type:'array', cellDates:true});
+  const ws = wb.Sheets['Prod_RawData'];
+  if (!ws) { alert("Onglet 'Prod_RawData' introuvable!"); return null; }
+  const rows = XLSX.utils.sheet_to_json(ws, {defval:0});
+  
+  const prod = rows.map(r => {
+    let dmt = r['DMT'] || 0;
+    // Convert time serial to seconds
+    if (typeof dmt === 'number') dmt = dmt * 86400;
+    else if (dmt instanceof Date) dmt = dmt.getHours()*3600 + dmt.getMinutes()*60 + dmt.getSeconds();
+    else dmt = 0;
+    return {
+      agent: r['COLABORATEURS'] || r['Agent'] || '',
+      mois: r['Mois'] || '',
+      nb_fiches: parseInt(r['Nb fiches'] || r['Nb_Appels'] || 0),
+      qualif_horaire: parseFloat(r['Qualification horaire'] || r['Prod_Horaire'] || 0),
+      dmt_secs: Math.round(dmt * 10) / 10,
+      pct_presence: Math.round((parseFloat(r['% Présence'] || 0)) * 10000) / 100,
+      pct_cafq: Math.round((parseFloat(r['% CA/FQ'] || 0)) * 10000) / 100,
+      pct_rdvca: Math.round((parseFloat(r['% RDV/CA'] || 0)) * 10000) / 100,
+      pct_qualite: Math.round((parseFloat(r['% Qualité'] || 0)) * 10000) / 100,
+      pct_pause: Math.round((parseFloat(r['% Pause/Heures adhéres'] || r['PCT_Pause'] || 0)) * 10000) / 100,
+    };
+  }).filter(r => r.agent);
+  
+  return computeAll(prod);
+}
+
+function computeAll(prod) {
+  const allM = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  const months = allM.filter(m => prod.some(r => r.mois === m));
+  const agents = [...new Set(prod.map(r => r.agent))].sort();
+  const lastMonth = months[months.length-1];
+
+  const avg = (arr) => arr.length ? arr.reduce((s,v)=>s+v,0)/arr.length : 0;
+  const avgNonZero = (arr) => { const f = arr.filter(v=>v>0); return f.length ? f.reduce((s,v)=>s+v,0)/f.length : 0; };
+
+  const synthese = months.map(m => {
+    const mp = prod.filter(r => r.mois === m);
+    return {
+      mois: m,
+      nb_fiches: mp.reduce((s,r) => s+r.nb_fiches, 0),
+      nb_agents: new Set(mp.filter(r=>r.nb_fiches>0).map(r=>r.agent)).size,
+      avg_dmt_secs: Math.round(avg(mp.map(r=>r.dmt_secs))*10)/10,
+      avg_qualif: Math.round(avg(mp.map(r=>r.qualif_horaire))*100)/100,
+      avg_qualite: Math.round(avgNonZero(mp.map(r=>r.pct_qualite))*100)/100,
+      avg_presence: Math.round(avgNonZero(mp.map(r=>r.pct_presence))*100)/100,
+      avg_cafq: Math.round(avg(mp.map(r=>r.pct_cafq))*100)/100,
+      avg_rdvca: Math.round(avgNonZero(mp.map(r=>r.pct_rdvca))*100)/100,
+      avg_pause: Math.round(avgNonZero(mp.map(r=>r.pct_pause))*100)/100,
+    };
+  });
+
+  const classement = agents.map(a => {
+    const ap = prod.filter(r => r.agent===a && r.mois===lastMonth);
+    if (!ap.length || !ap[0].nb_fiches) return null;
+    return { agent:a, ...ap[0] };
+  }).filter(Boolean).sort((a,b) => b.pct_qualite - a.pct_qualite);
+
+  const buildEvo = (key) => {
+    const result = {};
+    agents.forEach(a => {
+      const arr = months.map(m => {
+        const ap = prod.filter(r => r.agent===a && r.mois===m);
+        return ap.length ? (ap[0][key] || null) : null;
+      });
+      if (arr.some(v => v !== null && v > 0)) result[a] = arr;
+    });
+    return result;
+  };
+
+  return {
+    months, lastMonth, synthese, classement,
+    evo_dmt: buildEvo('dmt_secs'),
+    evo_qualite: buildEvo('pct_qualite'),
+    evo_presence: buildEvo('pct_presence'),
+    evo_cafq: buildEvo('pct_cafq'),
+    evo_rdvca: buildEvo('pct_rdvca'),
+    agents_list: agents,
+  };
+}
+
+// ===== DRAG & DROP =====
+let dragC = 0;
+document.addEventListener('dragenter', e => { e.preventDefault(); dragC++; document.getElementById('dropOverlay').classList.add('active'); });
+document.addEventListener('dragleave', e => { e.preventDefault(); dragC--; if(!dragC) document.getElementById('dropOverlay').classList.remove('active'); });
+document.addEventListener('dragover', e => e.preventDefault());
+document.addEventListener('drop', e => { e.preventDefault(); dragC=0; document.getElementById('dropOverlay').classList.remove('active'); const f=e.dataTransfer.files[0]; if(f) loadFile(f); });
+document.getElementById('fileInput').addEventListener('change', e => { if(e.target.files[0]) loadFile(e.target.files[0]); });
+
+function loadFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const result = parseExcel(e.target.result);
+      if (result) { DATA = result; renderAll(); }
+      const b = document.getElementById('uploadBanner');
+      b.classList.add('loaded');
+      b.innerHTML = '<i class="fa-solid fa-circle-check"></i><h3>\u2705 '+file.name+' — chargé</h3><p>MAJ: '+new Date().toLocaleString('fr-FR')+'</p>';
+      document.getElementById('lastUpdate').textContent = 'MAJ: '+new Date().toLocaleString('fr-FR');
+    } catch(err) { alert('Erreur: '+err.message); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ===== RENDER =====
+function fmtDMT(secs) { const m=Math.floor(secs/60); const s=Math.round(secs%60); return m+':'+(s<10?'0':'')+s; }
+
+function renderKPIs() {
+  const s = DATA.synthese;
+  if (!s.length) return;
+  const last = s[s.length-1], prev = s.length>1 ? s[s.length-2] : null;
+  function d(c,p,suf,inv) { if(!prev||!p) return ''; const diff=c-p; const up=inv?diff<0:diff>0; return '<div class="delta '+(up?'up':'down')+'">'+(up?'\u2191':'\u2193')+' '+Math.abs(diff).toFixed(1)+suf+' vs '+prev.mois+'</div>'; }
+  const cards = [
+    {icon:'fa-star',label:'Qualité',value:last.avg_qualite.toFixed(1)+'%',cls:'success',delta:d(last.avg_qualite,prev?.avg_qualite,'%',false)},
+    {icon:'fa-clock',label:'DMT',value:fmtDMT(last.avg_dmt_secs),cls:'primary',delta:d(last.avg_dmt_secs,prev?.avg_dmt_secs,'s',true)},
+    {icon:'fa-user-check',label:'Présence',value:last.avg_presence.toFixed(1)+'%',cls:'info',delta:d(last.avg_presence,prev?.avg_presence,'%',false)},
+    {icon:'fa-bullseye',label:'RDV/CA',value:last.avg_rdvca.toFixed(1)+'%',cls:'warning',delta:d(last.avg_rdvca,prev?.avg_rdvca,'%',false)},
+    {icon:'fa-percent',label:'CA/FQ',value:last.avg_cafq.toFixed(1)+'%',cls:'error',delta:d(last.avg_cafq,prev?.avg_cafq,'%',false)},
+    {icon:'fa-bolt',label:'Qualif/H',value:last.avg_qualif.toFixed(1),cls:'primary',delta:d(last.avg_qualif,prev?.avg_qualif,'',false)},
+    {icon:'fa-phone',label:'Fiches',value:last.nb_fiches.toLocaleString(),cls:'warning',delta:''},
+    {icon:'fa-users',label:'Agents',value:last.nb_agents,cls:'info',delta:''},
+  ];
+  document.getElementById('kpiGrid').innerHTML = cards.map(c => '<div class="kpi-card '+c.cls+'"><div class="icon"><i class="fa-solid '+c.icon+'"></i></div><div class="label">'+c.label+'</div><div class="value">'+c.value+'</div>'+c.delta+'</div>').join('');
+}
+
+function renderCharts() {
+  const months = DATA.synthese.map(s=>s.mois);
+  Highcharts.setOptions({chart:{backgroundColor:'transparent',style:{fontFamily:'-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif'}},title:{style:{fontSize:'13px',fontWeight:'600',color:'#1a1a2e'}},xAxis:{labels:{style:{color:'#44546f',fontSize:'10px'}},lineColor:'#e8ecf0'},yAxis:{labels:{style:{color:'#44546f',fontSize:'10px'}},gridLineColor:'#e8ecf0',title:{style:{color:'#8993a4'}}},legend:{itemStyle:{color:'#44546f',fontSize:'10px'}},tooltip:{backgroundColor:'#fff',borderColor:'#dfe1e6',style:{fontSize:'11px'}},credits:{enabled:false}});
+
+  Highcharts.chart('chartDMT',{chart:{type:'column'},title:{text:'DMT Moyenne'},xAxis:{categories:months},yAxis:{title:{text:''},labels:{formatter:function(){return fmtDMT(this.value)}}},tooltip:{formatter:function(){return this.x+': <b>'+fmtDMT(this.y)+'</b>'}},series:[{name:'DMT',data:DATA.synthese.map(s=>s.avg_dmt_secs),color:'#0052CC'}],plotOptions:{column:{borderRadius:4,dataLabels:{enabled:true,formatter:function(){return fmtDMT(this.y)}}}}});
+
+  Highcharts.chart('chartQualite',{chart:{type:'areaspline'},title:{text:'% Qualité Moyenne'},xAxis:{categories:months},yAxis:{title:{text:''},min:80,max:100},plotOptions:{areaspline:{fillOpacity:0.15,marker:{radius:4}}},series:[{name:'Qualité',data:DATA.synthese.map(s=>s.avg_qualite),color:'#36b37e'}],tooltip:{valueSuffix:'%'}});
+
+  Highcharts.chart('chartPresence',{chart:{type:'areaspline'},title:{text:'% Présence Moyenne'},xAxis:{categories:months},yAxis:{title:{text:''},min:90,max:100},plotOptions:{areaspline:{fillOpacity:0.15,marker:{radius:4}}},series:[{name:'Présence',data:DATA.synthese.map(s=>s.avg_presence),color:'#6554c0'}],tooltip:{valueSuffix:'%'}});
+
+  Highcharts.chart('chartRDVCA',{chart:{type:'column'},title:{text:'% RDV/CA Moyen'},xAxis:{categories:months},yAxis:{title:{text:''}},series:[{name:'RDV/CA',data:DATA.synthese.map(s=>s.avg_rdvca),color:'#ff991f'}],tooltip:{valueSuffix:'%'},plotOptions:{column:{borderRadius:4,dataLabels:{enabled:true,format:'{y:.1f}%'}}}});
+
+  Highcharts.chart('chartCAFQ',{chart:{type:'column'},title:{text:'% CA/FQ Moyen'},xAxis:{categories:months},yAxis:{title:{text:''}},series:[{name:'CA/FQ',data:DATA.synthese.map(s=>s.avg_cafq),color:'#de350b'}],tooltip:{valueSuffix:'%'},plotOptions:{column:{borderRadius:4,dataLabels:{enabled:true,format:'{y:.1f}%'}}}});
+
+  Highcharts.chart('chartQualifH',{chart:{type:'areaspline'},title:{text:'Qualification Horaire Moyenne'},xAxis:{categories:months},yAxis:{title:{text:''}},plotOptions:{areaspline:{fillOpacity:0.15,marker:{radius:4}}},series:[{name:'Qualif/H',data:DATA.synthese.map(s=>s.avg_qualif),color:'#00b8d9'}],tooltip:{valueSuffix:' fiches/h'}});
+}
+
+let currentEvo = 'qualite';
+function renderEvolution(type) {
+  currentEvo = type;
+  const map = {qualite:DATA.evo_qualite, dmt:DATA.evo_dmt, presence:DATA.evo_presence, rdvca:DATA.evo_rdvca, cafq:DATA.evo_cafq};
+  const titles = {qualite:'% Qualité par CSA', dmt:'DMT par CSA (secondes)', presence:'% Présence par CSA', rdvca:'% RDV/CA par CSA', cafq:'% CA/FQ par CSA'};
+  const suffixes = {qualite:'%', dmt:'s', presence:'%', rdvca:'%', cafq:'%'};
+  const dataMap = map[type] || {};
+
+  const agents = Object.entries(dataMap).map(([a,v])=>({agent:a,values:v,last:[...v].reverse().find(x=>x!==null&&x>0)||0}))
+    .sort((a,b) => type==='dmt' ? a.last-b.last : b.last-a.last).slice(0,12);
+
+  const cfg = {
+    chart:{type:'spline'},title:{text:titles[type]},
+    xAxis:{categories:DATA.months},yAxis:{title:{text:''}},
+    tooltip:{shared:true,valueSuffix:' '+suffixes[type]},
+    plotOptions:{spline:{marker:{radius:3}}},
+    series:agents.map(a=>({name:a.agent.split(' ').slice(0,2).join(' '),data:a.values,connectNulls:true})),
+    legend:{layout:'horizontal',align:'center',verticalAlign:'bottom',maxHeight:70},
+  };
+  if (type==='dmt') { cfg.tooltip = {shared:true,formatter:function(){let s='<b>'+this.x+'</b>';this.points.forEach(p=>{s+='<br><span style="color:'+p.color+'">●</span> '+p.series.name+': <b>'+fmtDMT(p.y)+'</b>';});return s;}}; }
+  Highcharts.chart('chartEvolution', cfg);
+}
+
+function renderClassement(filter) {
+  filter = filter || '';
+  const f = DATA.classement.filter(c=>c.agent.toLowerCase().includes(filter.toLowerCase()));
+  document.getElementById('classementMonth').textContent = DATA.lastMonth;
+  document.getElementById('agentCount').textContent = f.length+' agent'+(f.length>1?'s':'');
+  document.getElementById('classementBody').innerHTML = f.map((c,i)=>{
+    const rc = i===0?'gold':i===1?'silver':i===2?'bronze':'';
+    const qc = c.pct_qualite>=90?'high':c.pct_qualite>=75?'mid':'low';
+    return '<tr><td><span class="rank '+rc+'">'+(i+1)+'</span></td><td style="font-family:var(--font-sans);font-weight:500">'+c.agent+'</td><td><span class="badge-q '+qc+'">'+c.pct_qualite.toFixed(1)+'%</span></td><td>'+fmtDMT(c.dmt_secs)+'</td><td>'+c.pct_presence.toFixed(1)+'%</td><td>'+c.pct_rdvca.toFixed(1)+'%</td><td>'+c.pct_cafq.toFixed(1)+'%</td><td>'+c.nb_fiches+'</td></tr>';
+  }).join('');
+}
+
+let sortCol=2, sortDir=-1;
+document.querySelector('#classementTable thead').addEventListener('click',e=>{
+  const th=e.target.closest('th'); if(!th) return;
+  const idx=[...th.parentElement.children].indexOf(th);
+  if(idx===sortCol) sortDir*=-1; else {sortCol=idx;sortDir=-1;}
+  const keys=['','agent','pct_qualite','dmt_secs','pct_presence','pct_rdvca','pct_cafq','nb_fiches'];
+  const k=keys[idx]; if(!k) return;
+  DATA.classement.sort((a,b)=>{const va=typeof a[k]==='string'?a[k].toLowerCase():a[k];const vb=typeof b[k]==='string'?b[k].toLowerCase():b[k];return va>vb?sortDir:va<vb?-sortDir:0;});
+  renderClassement(document.getElementById('searchAgent').value);
+});
+
+function renderAll() { renderKPIs(); renderCharts(); renderEvolution(currentEvo); renderClassement(); }
+
+renderAll();
+document.getElementById('lastUpdate').textContent = 'Données pré-chargées | Glissez Excel pour MAJ';
+document.getElementById('searchAgent').addEventListener('input',e=>renderClassement(e.target.value));
+document.getElementById('evoTabs').addEventListener('click',e=>{
+  const t=e.target.closest('.tab'); if(!t) return;
+  document.querySelectorAll('#evoTabs .tab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  renderEvolution(t.dataset.chart);
+});
+</script>
+
+</body></html>
