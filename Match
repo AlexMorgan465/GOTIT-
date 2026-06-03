@@ -1,3 +1,14 @@
-Texte de remplacement :
+Bonjour,
 
-Carte de l’Europe illustrant les pays membres de la zone SEPA. Les États sont colorés selon leur appartenance à la zone euro, à l’Union européenne, à l’Espace économique européen (EEE) ou à la zone SEPA. La carte met en évidence les pays participants, notamment les membres de l’Union européenne ainsi que des pays associés comme la Suisse, le Royaume-Uni, Monaco, Saint-Marin, le Vatican, l’Andorre, le Monténégro, l’Albanie, la Macédoine du Nord et la Moldavie. Une légende en bas de la carte explique la signification des différentes couleurs utilisées.
+Après analyse du document PDF 1, nous avons constaté que certains éléments ne sont pas conformes aux exigences de la norme PDF/UA.
+
+Bien que le document soit correctement balisé dans son ensemble, plusieurs points d'accessibilité restent à corriger. En particulier, certains éléments ne respectent pas le ratio de contraste minimal de 4,5:1 requis pour garantir une lecture accessible à l'ensemble des utilisateurs, notamment les personnes ayant une déficience visuelle.
+
+Par conséquent, malgré la présence d'une structure de balisage adéquate, le document ne peut pas être considéré comme pleinement conforme aux critères d'accessibilité PDF/UA.
+
+Nous vous invitons à examiner ces non-conformités afin de mettre en œuvre les corrections nécessaires.
+
+N'hésitez pas à nous contacter pour toute précision complémentaire.
+
+Cordialement,
+[Votre nom]
