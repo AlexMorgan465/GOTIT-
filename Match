@@ -1,14 +1,11 @@
 Bonjour,
 
-Après analyse du document PDF 1, nous avons constaté que certains éléments ne sont pas conformes aux exigences de la norme PDF/UA.
+Après vérification du document PDF 1, nous avons constaté que certains éléments ne sont pas conformes aux exigences de la norme PDF/UA.
 
-Bien que le document soit correctement balisé dans son ensemble, plusieurs points d'accessibilité restent à corriger. En particulier, certains éléments ne respectent pas le ratio de contraste minimal de 4,5:1 requis pour garantir une lecture accessible à l'ensemble des utilisateurs, notamment les personnes ayant une déficience visuelle.
+Ces non-conformités concernent notamment des éléments dont le ratio de contraste est inférieur à 4,5:1, ce qui ne permet pas de répondre aux critères d'accessibilité requis.
 
-Par conséquent, malgré la présence d'une structure de balisage adéquate, le document ne peut pas être considéré comme pleinement conforme aux critères d'accessibilité PDF/UA.
-
-Nous vous invitons à examiner ces non-conformités afin de mettre en œuvre les corrections nécessaires.
-
-N'hésitez pas à nous contacter pour toute précision complémentaire.
+Nous vous invitons à prendre en compte ces points afin de corriger les éléments concernés.
 
 Cordialement,
+
 [Votre nom]
