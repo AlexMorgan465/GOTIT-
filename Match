@@ -1,11 +1,120 @@
-Bonjour,
 
-Après vérification du document PDF 1, nous avons constaté que certains éléments ne sont pas conformes aux exigences de la norme PDF/UA.
+var champs = [
+  "Nom",
+  "Prénom",
+  "Employeur",
+  "Adresse 1",
+  "Code postal",
+  "Ville",
+  "Type de matériel 1",
+  "Marque 1",
+  "Code barre 1",
+  "Faits et lieu 1",
+  "Date des faits"
+];
 
-Ces non-conformités concernent notamment des éléments dont le ratio de contraste est inférieur à 4,5:1, ce qui ne permet pas de répondre aux critères d'accessibilité requis.
+var TousChamps = [
+  "Nom",
+  "Prénom",
+  "Employeur",
+  "Adresse 1",
+  "Code postal",
+  "Ville",
+  "Type de matériel 1",
+"Type de matériel 2",
+"Type de matériel 3",
+"Type de matériel 4",
+"Type de matériel 5",
+  "Marque 1",
+"Marque 2",
+"Marque 3",
+"Marque 4",
+"Marque 5",
+  "Code barre 1",
+"Code barre 1",
+"Code barre 2",
+"Code barre 3",
+"Code barre 4",
+"Code barre 5",
+  "Faits et lieu 1",
+"Faits et lieu 2",
+"Faits et lieu 3",
+"Faits et lieu 4",
+"Faits et lieu 5",
+"Date des faits"
+];
 
-Nous vous invitons à prendre en compte ces points afin de corriger les éléments concernés.
 
-Cordialement,
+var erreur = false;
 
-[Votre nom]
+// 1) Vérif champs texte / select
+for (var i = 0; i < champs.length; i++) {
+  var champ = this.getField(champs[i]);
+  if (!champ) continue; // sécurité si nom de champ incorrect
+
+  if (champ.value == "" || champ.value == "-- Sélectionner --") {
+    app.alert("Veuillez remplir tous les champs obligatoires avant de signer.");
+    champ.setFocus();
+    erreur = true;
+    break;
+  }
+}
+
+// 1bis) Vérifier les autres données du tableau de matériels:
+for (var i=1; i<=5; i++){
+   var champType = this.getField("Type de matériel " + i);
+   var champMarque = this.getField("Marque " + i);
+   var champCB = this.getField("Code barre " + i).value;
+
+   if(champCB!="" && champCB.length!=13){
+     app.alert("Le code barre de la ligne " + i + " doit avoir exactement 13 caractères.");
+     erreur=true; 
+     break;
+   }
+
+       
+   if (champType.value!= "-- Sélectionner --" && (champMarque.value == "-- Sélectionner --" || champCB=="") ){ 
+     app.alert("Veuillez remplir tous les champs de la ligne " + i + " de la liste des matériels avant de signer.");
+     erreur=true; 
+     break;
+   }
+   if (champMarque.value!= "-- Sélectionner --" && (champType.value == "-- Sélectionner --" || champCB=="") ){ 
+     app.alert("Veuillez remplir tous les champs de la ligne " + i + " de la liste des matériels avant de signer.");
+     erreur=true; 
+     break;
+   }
+   if (champCB!= "" && (champType.value == "-- Sélectionner --" || champMarque.value == "-- Sélectionner --") ){ 
+     app.alert("Veuillez remplir tous les champs de la ligne " + i + " de la liste des matériels avant de signer.");
+     erreur=true; 
+     break;
+   }
+
+}
+
+
+// 2) Vérif radio "Perte ou vol"
+if (!erreur) {
+  var radio = this.getField("Perte ou vol");
+
+  // Selon les PDFs, "Off" = rien coché
+  if (!radio || radio.value == "Off" || radio.value == "") {
+    app.alert("Veuillez sélectionner 'Perte' ou 'Vol' avant de signer.");
+    if (radio) radio.setFocus();
+    erreur = true;
+  }
+}
+
+// 3) Signature si ok
+if (!erreur) {
+
+for (var i = 0; i < TousChamps.length; i++) {
+     var unchamp = this.getField(TousChamps[i]);
+     unchamp.readonly=true;
+}
+var radio = this.getField("Perte ou vol");
+radio.readonly=true;
+
+  var signature = this.getField("Signature utilisateur");
+  signature.readonly = false;
+  signature.signatureSign(); //⚠️ vérifie le nom exact de la méthode
+}
