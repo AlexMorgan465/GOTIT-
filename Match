@@ -47,6 +47,7 @@ var erreur = false;
 // =========================
 // Vérification champs obligatoires
 // =========================
+
 for (var i = 0; i < champs.length; i++) {
 
     var champ = this.getField(champs[i]);
@@ -55,7 +56,7 @@ for (var i = 0; i < champs.length; i++) {
 
     if (champ.value == "" || champ.value == "-- Sélectionner --") {
 
-        app.alert("Veuillez remplir tous les champs obligatoires avant de signer.");
+        app.alert("Veuillez remplir tous les champs obligatoires avant de continuer.");
 
         champ.setFocus();
 
@@ -68,17 +69,18 @@ for (var i = 0; i < champs.length; i++) {
 // =========================
 // Vérification tableau matériel
 // =========================
+
 if (!erreur) {
 
     for (var i = 1; i <= 5; i++) {
 
         var champType = this.getField("Type de matériel " + i);
         var champMarque = this.getField("Marque " + i);
-        var champCodeBarre = this.getField("Code barre " + i);
+        var champCBField = this.getField("Code barre " + i);
 
         var type = champType ? champType.value : "";
         var marque = champMarque ? champMarque.value : "";
-        var codeBarre = champCodeBarre ? champCodeBarre.value : "";
+        var codeBarre = champCBField ? champCBField.value : "";
 
         if (codeBarre != "" && codeBarre.length != 13) {
 
@@ -89,26 +91,20 @@ if (!erreur) {
             break;
         }
 
-        var lignePartiellementRemplie =
-            (type != "-- Sélectionner --" && type != "") ||
-            (marque != "-- Sélectionner --" && marque != "") ||
+        var ligneRempliePartiellement =
+            (type != "" && type != "-- Sélectionner --") ||
+            (marque != "" && marque != "-- Sélectionner --") ||
             (codeBarre != "");
 
-        if (lignePartiellementRemplie) {
+        if (ligneRempliePartiellement) {
 
             if (
-                type == "-- Sélectionner --" ||
-                type == "" ||
-                marque == "-- Sélectionner --" ||
-                marque == "" ||
+                type == "" || type == "-- Sélectionner --" ||
+                marque == "" || marque == "-- Sélectionner --" ||
                 codeBarre == ""
             ) {
 
-                app.alert(
-                    "Veuillez compléter tous les champs de la ligne " +
-                    i +
-                    " de la liste des matériels avant de signer."
-                );
+                app.alert("Veuillez compléter tous les champs de la ligne " + i + " de la liste des matériels.");
 
                 erreur = true;
 
@@ -121,37 +117,49 @@ if (!erreur) {
 // =========================
 // Vérification Perte / Vol
 // =========================
+
 if (!erreur) {
 
     var radio = this.getField("Perte ou vol");
 
     if (!radio || radio.value == "Off" || radio.value == "") {
 
-        app.alert("Veuillez sélectionner 'Perte' ou 'Vol' avant de signer.");
+        app.alert("Veuillez sélectionner 'Perte' ou 'Vol'.");
 
         erreur = true;
     }
 }
 
 // =========================
-// Signature autorisée
+// Tout est valide
 // =========================
+
 if (!erreur) {
 
+    // Verrouiller tous les champs
     for (var i = 0; i < TousChamps.length; i++) {
 
-        var champ = this.getField(TousChamps[i]);
+        var unchamp = this.getField(TousChamps[i]);
 
-        if (champ) {
-            champ.readonly = true;
+        if (unchamp) {
+            unchamp.readonly = true;
         }
     }
 
+    // Verrouiller Perte / Vol
     var radio = this.getField("Perte ou vol");
 
     if (radio) {
         radio.readonly = true;
     }
 
-    event.target.signatureSign();
+    // Afficher le champ signature
+    var signature = this.getField("Signature utilisateur");
+
+    if (signature) {
+        signature.display = display.visible;
+        signature.setFocus();
+    }
+
+    app.alert("Validation réussie. Vous pouvez maintenant signer le document.");
 }
