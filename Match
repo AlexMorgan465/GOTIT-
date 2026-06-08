@@ -1,165 +1,39 @@
-var champs = [
-  "Nom",
-  "Prénom",
-  "Employeur",
-  "Adresse 1",
-  "Code postal",
-  "Ville",
-  "Type de matériel 1",
-  "Marque 1",
-  "Code barre 1",
-  "Faits et lieu 1",
-  "Date des faits"
-];
+Objet : Proposition de solution pour classifier automatiquement les PDF tagués et non tagués
 
-var TousChamps = [
-  "Nom",
-  "Prénom",
-  "Employeur",
-  "Adresse 1",
-  "Code postal",
-  "Ville",
-  "Type de matériel 1",
-  "Type de matériel 2",
-  "Type de matériel 3",
-  "Type de matériel 4",
-  "Type de matériel 5",
-  "Marque 1",
-  "Marque 2",
-  "Marque 3",
-  "Marque 4",
-  "Marque 5",
-  "Code barre 1",
-  "Code barre 2",
-  "Code barre 3",
-  "Code barre 4",
-  "Code barre 5",
-  "Faits et lieu 1",
-  "Faits et lieu 2",
-  "Faits et lieu 3",
-  "Faits et lieu 4",
-  "Faits et lieu 5",
-  "Date des faits"
-];
+Bonjour,
 
-var erreur = false;
+Je vous propose la mise en place d’un script de classification automatique des fichiers PDF afin de distinguer les documents **tagués** des documents **non tagués**.
 
-// =========================
-// Vérification champs obligatoires
-// =========================
+La solution consiste à analyser chaque PDF d’un dossier donné, puis à le déplacer automatiquement dans l’un des deux répertoires suivants :
 
-for (var i = 0; i < champs.length; i++) {
+```text
+/TAGGED
+/UNTAGGED
+```
 
-    var champ = this.getField(champs[i]);
+Le classement repose sur la présence d’une structure de balisage PDF valide, notamment :
 
-    if (!champ) continue;
+- présence d’un `StructTreeRoot`
+- présence d’au moins une balise significative comme `P`, `H1`, `Figure`, `Table`, `TD`, `TR`, `TH`, `Span`
+- présence d’au moins un contenu lié à un `MCID`
 
-    if (champ.value == "" || champ.value == "-- Sélectionner --") {
+Ainsi, un PDF est considéré comme **tagué** uniquement s’il contient une structure réelle et exploitable. Dans le cas contraire, il est classé comme **non tagué**.
 
-        app.alert("Veuillez remplir tous les champs obligatoires avant de continuer.");
+La première version peut être réalisée sous forme de script **Node.js**, simple à exécuter sur un dossier de fichiers PDF. Elle permettra d’automatiser un premier tri rapide des documents.
 
-        champ.setFocus();
+Pour une utilisation plus robuste, notamment sur des PDF bancaires ou des documents nécessitant une validation plus stricte PDF/UA, je recommande une architecture hybride :
 
-        erreur = true;
+```text
+Script Node.js
+   -> appel du moteur Java existant
+   -> retour du statut TAGGED / UNTAGGED
+   -> nombre de balises
+   -> nombre de MCID
+   -> rapport JSON
+```
 
-        break;
-    }
-}
+Cette approche permettra d’obtenir une classification plus fiable, tout en préparant l’évolution vers des contrôles avancés : détection des balises manquantes, absence de texte alternatif, structure invalide, risque d’échec PAC, ou génération automatique de rapports de remédiation.
 
-// =========================
-// Vérification tableau matériel
-// =========================
+Je reste disponible pour mettre en place cette solution et l’adapter à votre pipeline actuel.
 
-if (!erreur) {
-
-    for (var i = 1; i <= 5; i++) {
-
-        var champType = this.getField("Type de matériel " + i);
-        var champMarque = this.getField("Marque " + i);
-        var champCBField = this.getField("Code barre " + i);
-
-        var type = champType ? champType.value : "";
-        var marque = champMarque ? champMarque.value : "";
-        var codeBarre = champCBField ? champCBField.value : "";
-
-        if (codeBarre != "" && codeBarre.length != 13) {
-
-            app.alert("Le code barre de la ligne " + i + " doit contenir exactement 13 caractères.");
-
-            erreur = true;
-
-            break;
-        }
-
-        var ligneRempliePartiellement =
-            (type != "" && type != "-- Sélectionner --") ||
-            (marque != "" && marque != "-- Sélectionner --") ||
-            (codeBarre != "");
-
-        if (ligneRempliePartiellement) {
-
-            if (
-                type == "" || type == "-- Sélectionner --" ||
-                marque == "" || marque == "-- Sélectionner --" ||
-                codeBarre == ""
-            ) {
-
-                app.alert("Veuillez compléter tous les champs de la ligne " + i + " de la liste des matériels.");
-
-                erreur = true;
-
-                break;
-            }
-        }
-    }
-}
-
-// =========================
-// Vérification Perte / Vol
-// =========================
-
-if (!erreur) {
-
-    var radio = this.getField("Perte ou vol");
-
-    if (!radio || radio.value == "Off" || radio.value == "") {
-
-        app.alert("Veuillez sélectionner 'Perte' ou 'Vol'.");
-
-        erreur = true;
-    }
-}
-
-// =========================
-// Tout est valide
-// =========================
-
-if (!erreur) {
-
-    // Verrouiller tous les champs
-    for (var i = 0; i < TousChamps.length; i++) {
-
-        var unchamp = this.getField(TousChamps[i]);
-
-        if (unchamp) {
-            unchamp.readonly = true;
-        }
-    }
-
-    // Verrouiller Perte / Vol
-    var radio = this.getField("Perte ou vol");
-
-    if (radio) {
-        radio.readonly = true;
-    }
-
-    // Afficher le champ signature
-    var signature = this.getField("Signature utilisateur");
-
-    if (signature) {
-        signature.display = display.visible;
-        signature.setFocus();
-    }
-
-    app.alert("Validation réussie. Vous pouvez maintenant signer le document.");
-}
+Cordialement,
