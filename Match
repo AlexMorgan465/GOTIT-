@@ -1,7 +1,18 @@
 var signature = this.getField("Signature utilisateur");
 var signature2 = this.getField("Signature supérieur hiérarchique");
 
-if (signature && signature2) {
-    signature.display = display.hidden;
-    signature2.display = display.hidden;
+if (signature) {
+    if (signature.value == "") {
+        signature.display = display.hidden;
+    } else {
+        signature.display = display.visible;
+    }
+}
+
+if (signature2) {
+    if (signature2.value == "") {
+        signature2.display = display.hidden;
+    } else {
+        signature2.display = display.visible;
+    }
 }
