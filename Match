@@ -1,55 +1,93 @@
 Private Sub SauvegarderSolva()
+
     Dim wx As Worksheet
     Set wx = ThisWorkbook.Worksheets("extraction_solva")
-    
+
     Dim lastRow As Long, i As Long
     lastRow = wx.Cells(wx.Rows.Count, 1).End(xlUp).Row
-    
+
     If lastRow < 2 Then
         MsgBox "Aucune donnée SOLVA à sauvegarder.", vbExclamation
         Exit Sub
     End If
-    
+
     Dim userName As String
     userName = Environ("USERNAME")
-    
+
     Dim ligneDate As String, moisLigne As String, anneeLigne As String
     Dim filePath As String, ligneCSV As String
     Dim fileDict As Object
     Set fileDict = CreateObject("Scripting.Dictionary")
+
     Dim fileNum As Integer
     Dim nbExport As Long
+    Dim key As Variant
+
     nbExport = 0
-    
+
     For i = 2 To lastRow
+
         ligneDate = wx.Cells(i, 3).Value
+
         If ligneDate <> "" Then
+
             moisLigne = Mid(ligneDate, 4, 2)
             anneeLigne = Mid(ligneDate, 7, 4)
-            ' Adjust path for solva exports (you may change folder as needed)
-            filePath = "\\uf11pu01\ACCESSIBILITÉ_CONSEILLERS\SOLVA\" & userName & "_" & moisLigne & "_" & anneeLigne & ".csv"
-            
+
+            filePath = "\\uf11pu01\ACCESSIBILITÉ_CONSEILLERS\SOLVA\" & _
+                       userName & "_" & moisLigne & "_" & anneeLigne & ".csv"
+
             If Not fileDict.Exists(filePath) Then
+
                 fileNum = FreeFile
+
+                'Créer le fichier et ajouter l'entête s'il n'existe pas
+                If Dir(filePath) = "" Then
+                    Open filePath For Output As #fileNum
+
+                    Print #fileNum, _
+                    "Collaborateur;Typologies;Date debut;Date fin;Solvabilité;Référence de dossier;Type;Décision;Commentaire;Dmt;CANAL"
+
+                    Close #fileNum
+                    fileNum = FreeFile
+                End If
+
                 Open filePath For Append As #fileNum
                 fileDict.Add filePath, fileNum
+
             End If
-            
+
             fileNum = fileDict(filePath)
-            ' Build CSV with columns: adjust according to extraction_solva structure
-            ligneCSV = wx.Cells(i, 1).Value & ";" & wx.Cells(i, 2).Value & ";" & wx.Cells(i, 3).Value & ";" & _
-                       wx.Cells(i, 4).Value & ";" & wx.Cells(i, 5).Value & ";" & wx.Cells(i, 6).Value & ";" & _
-                       wx.Cells(i, 7).Value & ";" & wx.Cells(i, 8).Value & ";" & wx.Cells(i, 9).Value
+
+            ligneCSV = _
+                wx.Cells(i, 1).Value & ";" & _
+                wx.Cells(i, 2).Value & ";" & _
+                wx.Cells(i, 3).Value & ";" & _
+                wx.Cells(i, 4).Value & ";" & _
+                wx.Cells(i, 5).Value & ";" & _
+                wx.Cells(i, 6).Value & ";" & _
+                wx.Cells(i, 7).Value & ";" & _
+                wx.Cells(i, 8).Value & ";" & _
+                wx.Cells(i, 9).Value & ";" & _
+                wx.Cells(i, 10).Value & ";" & _
+                wx.Cells(i, 11).Value
+
             Print #fileNum, ligneCSV
+
             nbExport = nbExport + 1
+
         End If
+
     Next i
-    
-    Dim key As Variant
+
+    'Fermer tous les fichiers ouverts
     For Each key In fileDict.Keys
         Close #fileDict(key)
     Next key
-    
+
+    'Vider la feuille
     wx.Rows("2:" & wx.Rows.Count).ClearContents
+
     MsgBox nbExport & " ligne(s) SOLVA sauvegardée(s) dans les fichiers mensuels.", vbInformation
+
 End Sub
