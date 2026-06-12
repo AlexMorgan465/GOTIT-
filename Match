@@ -5,41 +5,48 @@ Sub MatchAndCopy()
     Dim lastRow1 As Long
     Dim lastRow2 As Long
     Dim i As Long, j As Long
-    
-    ' Define sheets
+    Dim nom1 As String, nom2 As String
+    Dim parts
+    Dim status As String
+
     Set ws1 = ThisWorkbook.Sheets("SHEET_TRACE_NAME")
     Set ws2 = ThisWorkbook.Sheets("NC_LOG_ACTIONS")
-    
-    ' Get last rows
-    lastRow1 = ws1.Cells(ws1.Rows.Count, "A").End(xlUp).row
-    lastRow2 = ws2.Cells(ws2.Rows.Count, "C").End(xlUp).row
-    
-    ' Loop through Sheet1 column A
+
+    lastRow1 = ws1.Cells(ws1.Rows.Count, "A").End(xlUp).Row
+    lastRow2 = ws2.Cells(ws2.Rows.Count, "C").End(xlUp).Row
+
     For i = 1 To lastRow1
-        
-        ' Loop through Sheet2 column C
+
+        nom1 = Trim(ws1.Cells(i, 1).Value)
+
+        ' Enlever l'extension (.pdf, .docx, .xlsx, ...)
+        If InStrRev(nom1, ".") > 0 Then
+            nom1 = Left(nom1, InStrRev(nom1, ".") - 1)
+        End If
+
         For j = 1 To lastRow2
-            
-            ' Compare values
-            If ws1.Cells(i, 1).Value = ws2.Cells(j, 3).Value Then
-                
-    MsgBox ws2.Cells(j, 5).Value
-        parts = Split(ws2.Cells(j, 5).Value, "?")
-        status = Trim(parts(UBound(parts)))
-        MsgBox status
-        
-   
-                ' Copy Column E from Sheet2 ? put in Column B of Sheet1
+
+            nom2 = Trim(ws2.Cells(j, 3).Value)
+
+            If InStrRev(nom2, ".") > 0 Then
+                nom2 = Left(nom2, InStrRev(nom2, ".") - 1)
+            End If
+
+            If nom1 = nom2 Then
+
+                parts = Split(ws2.Cells(j, 5).Value, "?")
+                status = Trim(parts(UBound(parts)))
+
                 ws1.Cells(i, 5).Value = status
                 ws1.Cells(i, 8).Value = ws2.Cells(j, 1).Value
                 ws1.Cells(i, 11).Value = ws1.Cells(i, 8).Value - ws1.Cells(i, 7).Value
-                
-                Exit For ' Stop searching once match is found
-                
+
+                Exit For
+
             End If
-            
+
         Next j
-        
+
     Next i
 
     MsgBox "Done!"
