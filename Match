@@ -1,60 +1,254 @@
-Sub OCAOCR_Procedure()
-    Dim wsSource As Worksheet, wsDest As Worksheet
-    Dim lastRow As Long, lastCol As Long
-    Dim formatCol As Long
-    Dim i As Long, destRow As Long
-    Dim WbDest As Workbook
-    Dim fso As Object
-    Dim folder As Object
-    Dim subfolder As Object
-    Dim fichier As Object
+Private Sub cmdRechercher_Click()
+    LoadFichiers_NC
+End Sub
+
+
+Private Sub RechercherNonConforme(ByVal dossier As Object)
+
+    Dim sousDossier As Object
+    Dim d As Object
     
-    DossierChemin = "\\uf11pu01\COFIDIS_TC\A-PRODUCTION\1-PRODUCTION\CC DFRA\2-Nouveau répertoire"
-    
-    Set fso = CreateObject("Scripting.FileSystemObject")
-    Set folder = fso.GetFolder(DossierChemin)
-  
-    Set wsDest = ThisWorkbook.Worksheets("OCAOCR")
-
-    wsDest.Cells.Clear
-
-For Each subfolder In folder.SubFolders
-
-    For Each fichier In subfolder.Files
-    If LCase(fso.GetExtensionName(fichier.Name)) Like "tmp" Then GoTo NEXTFICHIER
-     If Left(fichier.Name, 2) = "~$" Then GoTo NEXTFICHIER
-    Set WbDest = Workbooks.Open("\\uf11pu01\COFIDIS_TC\A-PRODUCTION\1-PRODUCTION\CC DFRA\2-Nouveau répertoire\" & subfolder.Name & "\Cofidis.xlsm")
-    Set wsSource = WbDest.Worksheets("OCAOCR")
-
-    lastCol = wsSource.Cells(1, wsSource.Columns.Count).End(xlToLeft).Column
-    lastRow = wsSource.Cells(wsSource.Rows.Count, 1).End(xlUp).Row
-    
-        formatCol = 0
-    For i = 1 To lastCol
-        If LCase(wsSource.Cells(1, i).Value) = "i" Then
-            formatCol = i
-            Exit For
+    For Each sousDossier In dossier.subFolders
+        
+        If UCase(sousDossier.Name) = "NON CONFORME" Then
+            
+            For Each d In sousDossier.subFolders
+                lstResultats.AddItem d.Name
+                lstResultats.List(lstResultats.ListCount - 1, 1) = d.path
+            Next d
+            
         End If
-    Next i
+        
+        Call RechercherNonConforme(sousDossier)
+        
+    Next sousDossier
 
-    If formatCol = 0 Then
-        MsgBox "Column 'format fichier' not found", vbCritical
+End Sub
+
+
+Private Sub lstResultats_DblClick(ByVal Cancel As MSForms.ReturnBoolean)
+
+    If lstResultats.ListIndex <> -1 Then
+        Shell "explorer.exe """ & lstResultats.List(lstResultats.ListIndex, 1) & """", vbNormalFocus
+    End If
+
+End Sub
+
+
+Private Sub ParcourirDossier(ByVal dossier As Object)
+
+    Dim sousDossier As Object
+    Dim categorie As Object
+    Dim dossierFinal As Object
+    Dim racineSelectionnee As String
+    
+    For Each sousDossier In dossier.subFolders
+        
+        If UCase(sousDossier.Name) = "NON CONFORME" Then
+            
+            ' CAS SPECIAL ACM
+            If UCase(racineSelectionnee) = "ACM" Then
+                
+                For Each categorie In sousDossier.subFolders
+                    For Each dossierFinal In categorie.subFolders
+                        
+                        lstResultats.AddItem dossierFinal.Name
+                        lstResultats.List(lstResultats.ListCount - 1, 1) = dossierFinal.path
+                        
+                    Next dossierFinal
+                Next categorie
+            
+            ' TOUS LES AUTRES DOSSIERS
+            Else
+                
+                For Each dossierFinal In sousDossier.subFolders
+                    
+                    lstResultats.AddItem dossierFinal.Name
+                    lstResultats.List(lstResultats.ListCount - 1, 1) = dossierFinal.path
+                    
+                Next dossierFinal
+                
+            End If
+            
+        End If
+        
+        Call ParcourirDossier(sousDossier)
+        
+    Next sousDossier
+
+End Sub
+
+
+Private Sub CommandButton2_Click()
+
+    On Error GoTo GestionErreur
+    
+    Dim FSO As Object
+    Set FSO = CreateObject("Scripting.FileSystemObject")
+    
+    Dim dossierSource As String
+    Dim dstPath As String
+    Dim nomDossier As String
+    Dim destinationFinale As String
+    Dim statutFinal As String
+    Dim structType As StructureType
+    Dim srcPath As String
+    Dim fileName As String
+    
+    ' Vérifier sélection
+    If lstResultats.ListIndex = -1 Or lstResultats.Value = "DOSSIER VIDE" Then
+        MsgBox "Sélectionnez un dossier", vbExclamation
         Exit Sub
     End If
-If wsDest.Cells(1, 1).Value = "" Then
-    wsSource.Rows(1).Copy wsDest.Rows(1)
-    destRow = 2
-End If
+    
+    fileName = lstResultats.Value
+    structType = GetDomainStructure(cmbDomaine.Value)
+    
+    ' Sélection dossier source
+    With Application.FileDialog(msoFileDialogFolderPicker)
+        .Title = "Sélectionner le dossier à déplacer"
+        If .Show <> -1 Then Exit Sub
+        dossierSource = .SelectedItems(1)
+    End With
+    
+    ' Supprimer \ final
+    If Right(dossierSource, 1) = "\" Then
+        dossierSource = Left(dossierSource, Len(dossierSource) - 1)
+    End If
+    
+    ' Construction source
+    Select Case cboRacine.Value
+    
+    Case "CONTRATHEQUE"
+        srcPath = ROOT_PATH & "\" & cboRacine.Value & "\" & _
+                   cboSousDossier.Value & "\" & "NON CONFORME"
+    Case "DIRCO", "ACM", "CMO"
+        srcPath = ROOT_PATH & "\" & cboRacine.Value & "\" & _
+                  "NON CONFORME" & "\" & cboSousDossier.Value
+    Case Else
+        srcPath = ROOT_PATH & "\" & cboRacine.Value & "\" & "NON CONFORME"
+    End Select
+    
+    srcPath = srcPath & "\" & fileName
+    MsgBox srcPath
+    ' Construction destination
+    Select Case cboRacine.Value
+    
+    Case "CONTRATHEQUE"
+        dstPath = ROOT_PATH & "\" & cboRacine.Value & "\" & _
+                   cboSousDossier.Value & "\" & "TRAITES"
+    Case "DIRCO", "ACM", "CMO"
+        dstPath = ROOT_PATH & "\" & cboRacine.Value & "\" & _
+                  "TRAITES" & "\" & cboSousDossier.Value
+    Case Else
+        dstPath = ROOT_PATH & "\" & cboRacine.Value & "\" & "TRAITES"
+    End Select
+    MsgBox dstPath
+     
+    nomDossier = FSO.GetFolder(dossierSource).Name
+    destinationFinale = dstPath & "\" & nomDossier
+    
+    dstPath = dstPath & "\" & fileName
+    
+        Dim histoPath As String
+    histoPath = "\\uf11pu01\ACCESSIBILITÉ_CONSEILLERS\ACCESSIBILITE\Historique" & "\" & fileName
+    
+    
+    ' Vérifier si existe déjà
+    If FSO.FolderExists(destinationFinale) Then
+        MsgBox "Le dossier existe déjà à destination.", vbExclamation
+        Exit Sub
+    End If
+    
+    ' Copier
+        
+    Name srcPath As histoPath
 
-    ' Copy matching rows
-    For i = 2 To lastRow
-        If InStr(1, LCase(wsSource.Cells(i, formatCol).Value)) > 0 Then
-            wsSource.Rows(i).Copy wsDest.Rows(destRow)
-            destRow = destRow + 1
+    FSO.CopyFolder dossierSource, destinationFinale, True
+    'FSO.DeleteFolder srcPath, True
+    
+    If FSO.FolderExists(destinationFinale) Then
+        MsgBox "Dossier déplacé avec succès.", vbInformation
+    Else
+        MsgBox "Erreur lors de la copie.", vbCritical
+    End If
+    
+        ' Journaliser
+    LoAction "Déplacement", fileName, txtAgent, _
+              "de NON CONFORME à TRAITES"
+              
+    Dim ws1 As Worksheet, ws2 As Worksheet
+    Dim lastRow1 As Long, lastRow2 As Long
+    Dim dict As Object
+    Dim i As Long
+    Dim key As String
+
+    ' Définir les feuilles
+    Set ws1 = ThisWorkbook.Sheets("SHEET_TRACE_NAME")
+    Set ws2 = ThisWorkbook.Sheets("NC_LOG_ACTIONS")
+
+    ' Dernières lignes
+    lastRow1 = ws1.Cells(ws1.Rows.Count, "A").End(xlUp).row
+    lastRow2 = ws2.Cells(ws2.Rows.Count, "C").End(xlUp).row
+
+    ' Dictionnaire pour accélérer la recherche
+    Set dict = CreateObject("Scripting.Dictionary")
+
+    ' Charger les données de Sheet2 (clé = nom, valeur = date)
+    For i = 2 To lastRow2 ' (suppose ligne 1 = en-têtes)
+        key = Trim(ws2.Cells(i, "C").Value)
+        
+        If key <> "" Then
+            dict(key) = ws2.Cells(i, "A").Value
         End If
     Next i
-        WbDest.Close
-NEXTFICHIER:
-    Next fichier
-Next subfolder
+
+    ' Parcourir Sheet1 et comparer
+    For i = 2 To lastRow1
+        key = Trim(ws1.Cells(i, "A").Value)
+        
+        If dict.exists(key) Then
+            ' Coller la date en colonne B de Sheet1
+            ws1.Cells(i, "H").Value = dict(key)
+            ws1.Cells(i, "E").Value = "TRAITES"
+            ws1.Cells(i, "K").Value = ws1.Cells(i, "H").Value - ws1.Cells(i, "G").Value
+        End If
+    Next i
+
+    MsgBox "Traitement terminé !", vbInformation
+    
+    Exit Sub
+
+GestionErreur:
+    MsgBox "Erreur - " & Err.Number & " - " & Err.Description, vbCritical
+
+
+End Sub
+Private Sub LoadFichiers_NC()
+    Dim path As String
+    
+    lstFichiers.Clear
+    
+    If cboRacine = "" Or cboSousDossier = "" Then Exit Sub
+    
+    ' Construire le chemin selon la structure
+    Dim structType As StructureType
+    structType = GetDomainStructure(cmbDomaine.Value)
+    
+    Select Case cboRacine.Value
+        Case "CONTRATHEQUE"
+            path = ROOT_PATH & "\" & cboRacine.Value & "\" & cboSousDossier.Value & "\NON CONFORME"
+            
+        Case "ACM"
+                path = ROOT_PATH & "\" & cboRacine.Value & "\NON CONFORME\" & cboSousDossier.Value
+        Case Else
+                path = ROOT_PATH & "\" & cboRacine.Value & "\NON CONFORME\"
+    End Select
+    MsgBox path
+    ' Charger les fichiers
+    If FolderExists(path) Then
+        LoadFilesToList lstResultats, path
+    Else
+        lstResultats.AddItem "[DOSSIER VIDE]"
+    End If
 End Sub
