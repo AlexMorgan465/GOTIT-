@@ -1,254 +1,238 @@
+Voici une version simplifiée où :
+
+Rechercher affiche les dossiers présents dans NON CONFORME.
+
+L'utilisateur sélectionne un dossier dans lstResultats.
+
+En cliquant sur CommandButton2, le dossier est déplacé de NON CONFORME vers TRAITES.
+
+Plus besoin de FileDialog.
+
+
+Bouton Rechercher
+
 Private Sub cmdRechercher_Click()
+
     LoadFichiers_NC
+
 End Sub
 
 
-Private Sub RechercherNonConforme(ByVal dossier As Object)
+---
 
+Chargement des dossiers de NON CONFORME
+
+Private Sub LoadFichiers_NC()
+
+    Dim path As String
+    Dim FSO As Object
+    Dim dossier As Object
     Dim sousDossier As Object
-    Dim d As Object
-    
-    For Each sousDossier In dossier.subFolders
-        
-        If UCase(sousDossier.Name) = "NON CONFORME" Then
-            
-            For Each d In sousDossier.subFolders
-                lstResultats.AddItem d.Name
-                lstResultats.List(lstResultats.ListCount - 1, 1) = d.path
-            Next d
-            
-        End If
-        
-        Call RechercherNonConforme(sousDossier)
-        
-    Next sousDossier
+
+    lstResultats.Clear
+
+    If cboRacine.Value = "" Or cboSousDossier.Value = "" Then Exit Sub
+
+    Select Case cboRacine.Value
+
+        Case "CONTRATHEQUE"
+            path = ROOT_PATH & "\" & cboRacine.Value & "\" & _
+                   cboSousDossier.Value & "\NON CONFORME"
+
+        Case "DIRCO", "ACM", "CMO"
+            path = ROOT_PATH & "\" & cboRacine.Value & _
+                   "\NON CONFORME\" & cboSousDossier.Value
+
+        Case Else
+            path = ROOT_PATH & "\" & cboRacine.Value & "\NON CONFORME"
+
+    End Select
+
+    Set FSO = CreateObject("Scripting.FileSystemObject")
+
+    If FSO.FolderExists(path) Then
+
+        Set dossier = FSO.GetFolder(path)
+
+        For Each sousDossier In dossier.SubFolders
+
+            lstResultats.AddItem sousDossier.Name
+            lstResultats.List(lstResultats.ListCount - 1, 1) = sousDossier.Path
+
+        Next sousDossier
+
+    Else
+
+        lstResultats.AddItem "DOSSIER VIDE"
+
+    End If
 
 End Sub
 
+
+---
+
+Double-clic sur un dossier (optionnel)
 
 Private Sub lstResultats_DblClick(ByVal Cancel As MSForms.ReturnBoolean)
 
     If lstResultats.ListIndex <> -1 Then
-        Shell "explorer.exe """ & lstResultats.List(lstResultats.ListIndex, 1) & """", vbNormalFocus
+        Shell "explorer.exe """ & _
+              lstResultats.List(lstResultats.ListIndex, 1) & """", vbNormalFocus
     End If
 
 End Sub
 
 
-Private Sub ParcourirDossier(ByVal dossier As Object)
+---
 
-    Dim sousDossier As Object
-    Dim categorie As Object
-    Dim dossierFinal As Object
-    Dim racineSelectionnee As String
-    
-    For Each sousDossier In dossier.subFolders
-        
-        If UCase(sousDossier.Name) = "NON CONFORME" Then
-            
-            ' CAS SPECIAL ACM
-            If UCase(racineSelectionnee) = "ACM" Then
-                
-                For Each categorie In sousDossier.subFolders
-                    For Each dossierFinal In categorie.subFolders
-                        
-                        lstResultats.AddItem dossierFinal.Name
-                        lstResultats.List(lstResultats.ListCount - 1, 1) = dossierFinal.path
-                        
-                    Next dossierFinal
-                Next categorie
-            
-            ' TOUS LES AUTRES DOSSIERS
-            Else
-                
-                For Each dossierFinal In sousDossier.subFolders
-                    
-                    lstResultats.AddItem dossierFinal.Name
-                    lstResultats.List(lstResultats.ListCount - 1, 1) = dossierFinal.path
-                    
-                Next dossierFinal
-                
-            End If
-            
-        End If
-        
-        Call ParcourirDossier(sousDossier)
-        
-    Next sousDossier
+Bouton Déplacer (CommandButton2)
 
-End Sub
-
+Remplace entièrement ton CommandButton2_Click par :
 
 Private Sub CommandButton2_Click()
 
     On Error GoTo GestionErreur
-    
-    Dim FSO As Object
-    Set FSO = CreateObject("Scripting.FileSystemObject")
-    
-    Dim dossierSource As String
-    Dim dstPath As String
-    Dim nomDossier As String
-    Dim destinationFinale As String
-    Dim statutFinal As String
-    Dim structType As StructureType
-    Dim srcPath As String
-    Dim fileName As String
-    
-    ' Vérifier sélection
-    If lstResultats.ListIndex = -1 Or lstResultats.Value = "DOSSIER VIDE" Then
-        MsgBox "Sélectionnez un dossier", vbExclamation
-        Exit Sub
-    End If
-    
-    fileName = lstResultats.Value
-    structType = GetDomainStructure(cmbDomaine.Value)
-    
-    ' Sélection dossier source
-    With Application.FileDialog(msoFileDialogFolderPicker)
-        .Title = "Sélectionner le dossier à déplacer"
-        If .Show <> -1 Then Exit Sub
-        dossierSource = .SelectedItems(1)
-    End With
-    
-    ' Supprimer \ final
-    If Right(dossierSource, 1) = "\" Then
-        dossierSource = Left(dossierSource, Len(dossierSource) - 1)
-    End If
-    
-    ' Construction source
-    Select Case cboRacine.Value
-    
-    Case "CONTRATHEQUE"
-        srcPath = ROOT_PATH & "\" & cboRacine.Value & "\" & _
-                   cboSousDossier.Value & "\" & "NON CONFORME"
-    Case "DIRCO", "ACM", "CMO"
-        srcPath = ROOT_PATH & "\" & cboRacine.Value & "\" & _
-                  "NON CONFORME" & "\" & cboSousDossier.Value
-    Case Else
-        srcPath = ROOT_PATH & "\" & cboRacine.Value & "\" & "NON CONFORME"
-    End Select
-    
-    srcPath = srcPath & "\" & fileName
-    MsgBox srcPath
-    ' Construction destination
-    Select Case cboRacine.Value
-    
-    Case "CONTRATHEQUE"
-        dstPath = ROOT_PATH & "\" & cboRacine.Value & "\" & _
-                   cboSousDossier.Value & "\" & "TRAITES"
-    Case "DIRCO", "ACM", "CMO"
-        dstPath = ROOT_PATH & "\" & cboRacine.Value & "\" & _
-                  "TRAITES" & "\" & cboSousDossier.Value
-    Case Else
-        dstPath = ROOT_PATH & "\" & cboRacine.Value & "\" & "TRAITES"
-    End Select
-    MsgBox dstPath
-     
-    nomDossier = FSO.GetFolder(dossierSource).Name
-    destinationFinale = dstPath & "\" & nomDossier
-    
-    dstPath = dstPath & "\" & fileName
-    
-        Dim histoPath As String
-    histoPath = "\\uf11pu01\ACCESSIBILITÉ_CONSEILLERS\ACCESSIBILITE\Historique" & "\" & fileName
-    
-    
-    ' Vérifier si existe déjà
-    If FSO.FolderExists(destinationFinale) Then
-        MsgBox "Le dossier existe déjà à destination.", vbExclamation
-        Exit Sub
-    End If
-    
-    ' Copier
-        
-    Name srcPath As histoPath
 
-    FSO.CopyFolder dossierSource, destinationFinale, True
-    'FSO.DeleteFolder srcPath, True
-    
-    If FSO.FolderExists(destinationFinale) Then
-        MsgBox "Dossier déplacé avec succès.", vbInformation
-    Else
-        MsgBox "Erreur lors de la copie.", vbCritical
+    Dim FSO As Object
+    Dim dossierSource As String
+    Dim destinationPath As String
+    Dim destinationFinale As String
+    Dim nomDossier As String
+    Dim fileName As String
+    Dim histoPath As String
+
+    Set FSO = CreateObject("Scripting.FileSystemObject")
+
+    ' Vérifier qu'un dossier est sélectionné
+    If lstResultats.ListIndex = -1 Then
+        MsgBox "Sélectionnez un dossier.", vbExclamation
+        Exit Sub
     End If
-    
-        ' Journaliser
+
+    fileName = lstResultats.Value
+    dossierSource = lstResultats.List(lstResultats.ListIndex, 1)
+
+    nomDossier = FSO.GetFolder(dossierSource).Name
+
+    ' Construction du chemin TRAITES
+    Select Case cboRacine.Value
+
+        Case "CONTRATHEQUE"
+
+            destinationPath = ROOT_PATH & "\" & _
+                              cboRacine.Value & "\" & _
+                              cboSousDossier.Value & "\TRAITES"
+
+        Case "DIRCO", "ACM", "CMO"
+
+            destinationPath = ROOT_PATH & "\" & _
+                              cboRacine.Value & "\TRAITES\" & _
+                              cboSousDossier.Value
+
+        Case Else
+
+            destinationPath = ROOT_PATH & "\" & _
+                              cboRacine.Value & "\TRAITES"
+
+    End Select
+
+    destinationFinale = destinationPath & "\" & nomDossier
+
+    ' Historique
+    histoPath = "\\uf11pu01\ACCESSIBILITÉ_CONSEILLERS\ACCESSIBILITE\Historique\" & nomDossier
+
+    ' Vérifier si le dossier existe déjà
+    If FSO.FolderExists(destinationFinale) Then
+
+        MsgBox "Le dossier existe déjà dans TRAITES.", vbExclamation
+        Exit Sub
+
+    End If
+
+    ' Sauvegarde dans Historique
+    FSO.CopyFolder dossierSource, histoPath, True
+
+    ' Déplacement vers TRAITES
+    FSO.MoveFolder dossierSource, destinationFinale
+
+    If FSO.FolderExists(destinationFinale) Then
+
+        MsgBox "Dossier déplacé avec succès.", vbInformation
+
+    Else
+
+        MsgBox "Erreur lors du déplacement.", vbCritical
+        Exit Sub
+
+    End If
+
+    ' Journalisation
     LoAction "Déplacement", fileName, txtAgent, _
-              "de NON CONFORME à TRAITES"
-              
-    Dim ws1 As Worksheet, ws2 As Worksheet
-    Dim lastRow1 As Long, lastRow2 As Long
+             "de NON CONFORME à TRAITES"
+
+    ' Mise à jour des feuilles
+    Dim ws1 As Worksheet
+    Dim ws2 As Worksheet
     Dim dict As Object
+    Dim lastRow1 As Long
+    Dim lastRow2 As Long
     Dim i As Long
     Dim key As String
 
-    ' Définir les feuilles
     Set ws1 = ThisWorkbook.Sheets("SHEET_TRACE_NAME")
     Set ws2 = ThisWorkbook.Sheets("NC_LOG_ACTIONS")
 
-    ' Dernières lignes
-    lastRow1 = ws1.Cells(ws1.Rows.Count, "A").End(xlUp).row
-    lastRow2 = ws2.Cells(ws2.Rows.Count, "C").End(xlUp).row
+    lastRow1 = ws1.Cells(ws1.Rows.Count, "A").End(xlUp).Row
+    lastRow2 = ws2.Cells(ws2.Rows.Count, "C").End(xlUp).Row
 
-    ' Dictionnaire pour accélérer la recherche
     Set dict = CreateObject("Scripting.Dictionary")
 
-    ' Charger les données de Sheet2 (clé = nom, valeur = date)
-    For i = 2 To lastRow2 ' (suppose ligne 1 = en-têtes)
+    For i = 2 To lastRow2
+
         key = Trim(ws2.Cells(i, "C").Value)
-        
+
         If key <> "" Then
             dict(key) = ws2.Cells(i, "A").Value
         End If
+
     Next i
 
-    ' Parcourir Sheet1 et comparer
     For i = 2 To lastRow1
+
         key = Trim(ws1.Cells(i, "A").Value)
-        
-        If dict.exists(key) Then
-            ' Coller la date en colonne B de Sheet1
+
+        If dict.Exists(key) Then
+
             ws1.Cells(i, "H").Value = dict(key)
             ws1.Cells(i, "E").Value = "TRAITES"
             ws1.Cells(i, "K").Value = ws1.Cells(i, "H").Value - ws1.Cells(i, "G").Value
+
         End If
+
     Next i
 
-    MsgBox "Traitement terminé !", vbInformation
-    
+    ' Rafraîchir la liste
+    LoadFichiers_NC
+
+    MsgBox "Traitement terminé.", vbInformation
+
     Exit Sub
 
 GestionErreur:
-    MsgBox "Erreur - " & Err.Number & " - " & Err.Description, vbCritical
 
+    MsgBox "Erreur " & Err.Number & vbCrLf & Err.Description, vbCritical
 
 End Sub
-Private Sub LoadFichiers_NC()
-    Dim path As String
-    
-    lstFichiers.Clear
-    
-    If cboRacine = "" Or cboSousDossier = "" Then Exit Sub
-    
-    ' Construire le chemin selon la structure
-    Dim structType As StructureType
-    structType = GetDomainStructure(cmbDomaine.Value)
-    
-    Select Case cboRacine.Value
-        Case "CONTRATHEQUE"
-            path = ROOT_PATH & "\" & cboRacine.Value & "\" & cboSousDossier.Value & "\NON CONFORME"
-            
-        Case "ACM"
-                path = ROOT_PATH & "\" & cboRacine.Value & "\NON CONFORME\" & cboSousDossier.Value
-        Case Else
-                path = ROOT_PATH & "\" & cboRacine.Value & "\NON CONFORME\"
-    End Select
-    MsgBox path
-    ' Charger les fichiers
-    If FolderExists(path) Then
-        LoadFilesToList lstResultats, path
-    Else
-        lstResultats.AddItem "[DOSSIER VIDE]"
-    End If
-End Sub
+
+Avec cette version, le fonctionnement est :
+
+1. Rechercher → liste les dossiers contenus dans NON CONFORME.
+
+
+2. Sélection d'un dossier dans lstResultats.
+
+
+3. Déplacer → copie vers Historique, puis déplace vers TRAITES, met à jour les feuilles Excel et recharge automatiquement la liste.
+
+
